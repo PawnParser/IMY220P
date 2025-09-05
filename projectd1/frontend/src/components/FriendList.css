@@ -1,0 +1,33 @@
+.friend-list {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  
+  .friends-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .friends-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .friends-section h4 {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .friend-avatar {
+    width: 32px; /* Ensure consistent size */
+    height: 32px; /* Ensure consistent size */
+    border-radius: 50%;
+    margin-right: 0.75rem;
+    object-fit: cover;
+    border: 2px solid var(--accent-secondary);
+  }
