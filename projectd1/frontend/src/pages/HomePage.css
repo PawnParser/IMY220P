@@ -1,0 +1,71 @@
+.home-page {
+    display: flex;
+    padding: 2rem;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .main-content {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .feed-section {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  
+  .feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .feed-tabs {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .feed-tabs button {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .feed-tabs button.active {
+    background-color: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+  }
+  
+  .sort-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  .projects-section {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  
+  .sidebar {
+    flex: 1;
+  }
