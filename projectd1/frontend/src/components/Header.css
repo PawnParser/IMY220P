@@ -1,0 +1,137 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo a {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo a::before {
+  content: "</>";
+  font-weight: 900;
+  color: var(--accent-secondary);
+}
+
+.nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.nav a:hover {
+  color: var(--accent-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Button styles for header actions */
+.btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-icon {
+  color: var(--text-primary); /* Use text color variable */
+}
+
+.btn-icon:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--accent-primary);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+  padding: 0.5rem 1rem;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-hover);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-color);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  object-fit: cover;
+  border: 2px solid var(--accent-secondary);
+}
+
+.username {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1rem;
+    gap: 1rem;
+  }
+  
+  .user-menu .username {
+    display: none;
+  }
+  
+  .header-actions {
+    gap: 0.5rem;
+  }
+  
+  .btn {
+    padding: 0.4rem;
+  }
+}

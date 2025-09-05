@@ -1,0 +1,38 @@
+.project {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  
+  .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .project-header h1 {
+    color: var(--text-primary);
+  }
+  
+  .project-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .project-actions button {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .project-description {
+    color: var(--text-secondary);
+  }

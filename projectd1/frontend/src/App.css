@@ -1,0 +1,184 @@
+/* Light theme - Green accent with light background */
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --accent-primary: #84ac4e; /* Main green color */
+  --accent-secondary: #689142; /* Slightly darker */
+  --accent-tertiary: #d8ffa8; /* Lighter variation */
+  --accent-danger: #dc3545;
+  --accent-success: #a5e06e;
+  --accent-warning: #ffc107;
+  --border-color: #dee2e6;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 6px 8px rgba(0, 0, 0, 0.15);
+  --gradient-primary: linear-gradient(135deg, #a5e06e 0%, #c1ff72 100%);
+  --gradient-secondary: linear-gradient(135deg, #c1ff72 0%, #d8ffa8 100%);
+}
+
+/* Dark theme - Dark background with green accents */
+body.dark-mode {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
+  --accent-primary: #84ac4e; /* Same green as light mode */
+  --accent-secondary: #689142; /* Slightly darker */
+  --accent-tertiary: #d8ffa8; /* Lighter variation */
+  --accent-danger: #dc3545;
+  --accent-success: #a5e06e;
+  --accent-warning: #ffc107;
+  --border-color: #444444;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 6px 8px rgba(0, 0, 0, 0.4);
+  --gradient-primary: linear-gradient(135deg, #a5e06e 0%, #c1ff72 100%);
+  --gradient-secondary: linear-gradient(135deg, #c1ff72 0%, #d8ffa8 100%);
+}
+
+/* Rest of the App.css remains the same */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.App {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Common component styles */
+.card {
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: #2c3e50; /* Dark text for better contrast on light green */
+  border: 2px solid transparent;
+}
+
+.btn-primary:hover {
+  background: var(--gradient-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(193, 255, 114, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #2c3e50;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--accent-primary);
+  border: 2px solid var(--accent-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--accent-primary);
+  color: #2c3e50; /* Dark text for better contrast */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(193, 255, 114, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--accent-danger) 0%, #bb2d3b 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #bb2d3b 0%, var(--accent-danger) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+}
+
+.btn-icon {
+  padding: 0.75rem;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Enhanced scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-secondary);
+}
+
+/* Improved focus states for accessibility */
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.loading {
+  animation: pulse 2s infinite;
+}
+
+/* Smooth animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
