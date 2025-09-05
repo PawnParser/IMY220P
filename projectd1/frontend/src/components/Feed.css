@@ -1,0 +1,91 @@
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.feed-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background-color: var(--bg-secondary);
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.feed-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-secondary);
+}
+
+.feed-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-username {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.project-name {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.feed-content {
+  margin-bottom: 1rem;
+}
+
+.feed-message {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.feed-comment {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.feed-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.feed-time {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+.feed-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.feed-actions button {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.feed-actions button:hover {
+  background-color: var(--bg-tertiary);
+}
