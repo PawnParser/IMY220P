@@ -9,8 +9,8 @@
   --accent-primary: #84ac4e; /* Main green color */
   --accent-secondary: #689142; /* Slightly darker */
   --accent-tertiary: #d8ffa8; /* Lighter variation */
-  --accent-danger: #dc3545;
-  --accent-success: #a5e06e;
+  --accent-danger: #992632;
+  --accent-success: #7da854;
   --accent-warning: #ffc107;
   --border-color: #dee2e6;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -30,8 +30,8 @@ body.dark-mode {
   --accent-primary: #84ac4e; /* Same green as light mode */
   --accent-secondary: #689142; /* Slightly darker */
   --accent-tertiary: #d8ffa8; /* Lighter variation */
-  --accent-danger: #dc3545;
-  --accent-success: #a5e06e;
+  --accent-danger: #992632;
+  --accent-success: #7da854;
   --accent-warning: #ffc107;
   --border-color: #444444;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);

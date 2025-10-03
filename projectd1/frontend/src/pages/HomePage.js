@@ -1,80 +1,201 @@
-// Author u22857941 : Christopher Yoko
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
+import { Link } from 'react-router-dom';
 import Feed from '../components/Feed';
-import ProjectList from '../components/ProjectList';
 import FriendList from '../components/FriendList';
-import SearchInput from '../components/SearchInput';
+import ProjectList from '../components/ProjectList';
+import CreateProject from '../components/CreateProject';
 import './HomePage.css';
 
 const HomePage = () => {
-  // Dummy data as per requirements
-  const projects = [
-    { id: 1, name: 'ScamWebsite', description: 'A website project' },
-    { id: 2, name: 'GenerousPortfolio', description: 'Portfolio generator' },
-    { id: 3, name: 'Shoe lace tying AI', description: 'AI to tie shoelaces' },
-    { id: 4, name: 'Other Project', description: 'Another project' }
-  ];
+  const [activeFeed, setActiveFeed] = useState('local');
+  const [activities, setActivities] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [friends, setFriends] = useState({ online: [], offline: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreateProject, setShowCreateProject] = useState(false);
+  const { currentUser } = useAuth();
 
-  const friends = {
-    online: [
-      { id: 1, name: 'Billy Blunder', projects: 12 },
-      { id: 2, name: 'Sally Blunder', projects: 8 },
-      { id: 3, name: 'NoFriends4U Smith', projects: 3 }
-    ],
-    offline: [
-      { id: 4, name: 'Offline Friend 1', projects: 5 },
-      { id: 5, name: 'Offline Friend 2', projects: 7 }
-    ]
+  useEffect(() => {
+    loadData();
+  }, [activeFeed]);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      // Load projects first
+      const projectsResponse = await apiService.getProjects(token);
+      if (projectsResponse.success) {
+        console.log('Loaded projects:', projectsResponse.projects);
+        setProjects(projectsResponse.projects);
+      } else {
+        console.error('Failed to load projects:', projectsResponse.message);
+        setProjects([]);
+      }
+
+      // Load activities
+      try {
+        const activityResponse = activeFeed === 'local' 
+          ? await apiService.getLocalActivity(token)
+          : await apiService.getGlobalActivity(token);
+        
+        if (activityResponse.success) {
+          console.log('Loaded activities:', activityResponse.activities);
+          const formattedActivities = activityResponse.activities.map(activity => ({
+            id: activity._id,
+            user: activity.user && activity.user[0] ? activity.user[0].name : activity.userId,
+            project: activity.project && activity.project[0] ? activity.project[0].name : 'Unknown Project',
+            message: activity.message,
+            comment: activity.comment,
+            time: new Date(activity.createdAt).toLocaleDateString()
+          }));
+          setActivities(formattedActivities);
+        }
+      } catch (activityError) {
+        console.log('Activities not available yet, using sample data');
+        setActivities([
+          {
+            id: 1,
+            user: 'john_doe',
+            project: 'E-commerce Website',
+            message: 'Implemented user authentication',
+            comment: 'Added JWT-based authentication system',
+            time: '2 hours ago'
+          }
+        ]);
+      }
+
+      // Load friends
+      try {
+        const profileResponse = await apiService.getProfile(token);
+        if (profileResponse.success && profileResponse.user.friends) {
+          const friendList = profileResponse.user.friends.map((friend, index) => ({
+            id: index,
+            name: friend,
+            online: Math.random() > 0.5
+          }));
+          
+          setFriends({
+            online: friendList.filter(f => f.online),
+            offline: friendList.filter(f => !f.online)
+          });
+        }
+      } catch (friendError) {
+        console.log('Friends not available, using sample data');
+        setFriends({
+          online: [{ id: 1, name: 'jane_smith', online: true }],
+          offline: [{ id: 2, name: 'john_doe', online: false }]
+        });
+      }
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const feedItems = [
-    {
-      id: 1,
-      user: 'Mr John Doe',
-      project: 'Stay in Sync',
-      message: 'Renamed "node_modules" to "no_demo_dules"',
-      comment: 'Working code is for suckers so I decided to ruin your day for fun, enjoy this update John! I quit!!',
-      time: '2 hours ago'
-    },
-    {
-      id: 2,
-      user: 'Billy Blunder',
-      project: 'ChessWebsite',
-      message: 'Fixed pawn movement logic',
-      comment: 'Pawns can now move forward properly without crashing the game',
-      time: '4 hours ago'
-    }
-  ];
+  const handleProjectCreated = (newProject) => {
+    setShowCreateProject(false);
+    loadData();
+  };
+
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="home-page">
-      <div className="main-content">
-        <div className="feed-section">
-          <div className="feed-header">
-            <h2>My Network</h2>
-            <div className="feed-tabs">
-              <button className="active">Global feed</button>
-              <button>Recent commits</button>
-              <button>Code Projects</button>
-            </div>
-            <select className="sort-select">
-              <option>Sort By (Date)</option>
-              <option>Sort By (Views)</option>
-            </select>
-          </div>
-          <Feed items={feedItems} />
-        </div>
-
-        <div className="projects-section">
-          <h2>Your Projects</h2>
-          <SearchInput />
-          <ProjectList projects={projects} />
+      <div className="home-header">
+        <h1>Welcome back, {currentUser?.name}!</h1>
+        <div className="header-actions">
+          <button 
+            onClick={() => setShowCreateProject(true)}
+            className="create-project-btn"
+          >
+            + Create Project
+          </button>
         </div>
       </div>
-
-      <aside className="sidebar">
-        <FriendList friends={friends} />
-      </aside>
+      
+      {showCreateProject && (
+        <div className="modal-overlay">
+          <div className="modal-content card">
+            <div className="modal-header">
+              <h2>Create New Project</h2>
+              <button 
+                onClick={() => setShowCreateProject(false)}
+                className="close-btn"
+              >
+                ×
+              </button>
+            </div>
+            <CreateProject onProjectCreated={handleProjectCreated} />
+          </div>
+        </div>
+      )}
+      
+      <div className="home-content">
+        <div className="main-content card">
+          <div className="section-header">
+            <h2>Activity Feed</h2>
+            <div className="feed-controls">
+              <button 
+                className={activeFeed === 'local' ? 'active' : ''}
+                onClick={() => setActiveFeed('local')}
+              >
+                Local
+              </button>
+              <button 
+                className={activeFeed === 'global' ? 'active' : ''}
+                onClick={() => setActiveFeed('global')}
+              >
+                Global
+              </button>
+            </div>
+          </div>
+          
+          {activities.length > 0 ? (
+            <Feed items={activities} />
+          ) : (
+            <div className="no-data">
+              <p>No activities found. Create a project or check in some changes!</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="sidebar">
+          <div className="sidebar-section card">
+            <div className="section-header">
+              <h3>Your Projects</h3>
+              <span className="count-badge">{projects.length}</span>
+            </div>
+            {projects.length > 0 ? (
+              <ProjectList projects={projects} />
+            ) : (
+              <div className="no-data">
+                <p>No projects yet.</p>
+                <button 
+                  onClick={() => setShowCreateProject(true)}
+                  className="create-project-btn-small"
+                >
+                  Create your first project
+                </button>
+              </div>
+            )}
+          </div>
+          
+          <div className="sidebar-section card">
+            <div className="section-header">
+              <h3>Friends</h3>
+            </div>
+            <FriendList friends={friends} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

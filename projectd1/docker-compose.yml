@@ -1,6 +1,16 @@
-# docker-compose.yml
 version: '3.8'
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=versioncontrol
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
   app:
     build: .
     ports:
@@ -8,7 +18,14 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/versioncontrol
+      - JWT_SECRET=your-super-secret-jwt-key-here
     volumes:
       - .:/app
       - /app/node_modules
+    depends_on:
+      - mongodb
     restart: unless-stopped
+
+volumes:
+  mongodb_data:

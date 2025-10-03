@@ -1,12 +1,12 @@
-const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   entry: './frontend/src/index.js',
   output: {
     path: path.resolve(__dirname, 'frontend/dist'),
     filename: 'bundle.js',
-    publicPath: '/'
+    publicPath: '/',
   },
   module: {
     rules: [
@@ -14,43 +14,46 @@ module.exports = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader'
-        }
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env', '@babel/preset-react'],
+          },
+        },
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
       {
-        test: /\.(png|jpg|gif|svg)$/,
-        type: 'asset/resource',
-        generator: {
-          filename: 'assets/images/[hash][ext][query]'
-        }
-      }
-    ]
-  },
-  resolve: {
-    extensions: ['.js', '.jsx']
+        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        use: {
+          loader: 'file-loader',
+          options: {
+            name: '[name].[ext]',
+            outputPath: 'assets/images/',
+          },
+        },
+      },
+    ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './frontend/public/index.html'
-    })
+      template: './frontend/public/index.html',
+    }),
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'frontend/dist'),
-    },
-    compress: true,
-    port: 3000,
     historyApiFallback: true,
+    port: 3000,
+    // FIXED: Proxy should be an array of objects
     proxy: [
       {
         context: ['/api'],
         target: 'http://localhost:5000',
-        changeOrigin: true
+        changeOrigin: true,
       }
-    ]
-  }
+    ],
+  },
+  resolve: {
+    extensions: ['.js', '.jsx'],
+  },
 };

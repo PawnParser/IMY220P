@@ -1,5 +1,5 @@
-// Author u22857941 : Christopher Yoko
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ProjectPreview from './ProjectPreview';
 import './ProjectList.css';
 
@@ -7,7 +7,13 @@ const ProjectList = ({ projects }) => {
   return (
     <div className="project-list">
       {projects.map(project => (
-        <ProjectPreview key={project.id} project={project} />
+        <Link 
+          key={project._id || project.id} 
+          to={`/project/${project.name}`}
+          className="project-link"
+        >
+          <ProjectPreview project={project} />
+        </Link>
       ))}
     </div>
   );

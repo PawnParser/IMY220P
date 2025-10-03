@@ -7,6 +7,7 @@ import SplashPage from './pages/SplashPage';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import ProjectPage from './pages/ProjectPage';
+import SearchPage from './pages/SearchPage';
 import Header from './components/Header';
 import './App.css';
 
@@ -36,9 +37,8 @@ function App() {
 }
 
 function MainLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/" />;
   }
@@ -48,8 +48,9 @@ function MainLayout() {
       <Header />
       <Routes>
         <Route path="/home" element={<HomePage />} />
-        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route path="/profile/:id?" element={<ProfilePage />} />
         <Route path="/project/:id" element={<ProjectPage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
     </>

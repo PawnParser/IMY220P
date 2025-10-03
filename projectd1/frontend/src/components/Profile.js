@@ -10,7 +10,6 @@ const Profile = ({ data }) => {
         <img src={dpImage} alt={data.name} className="profile-avatar" />
         <div className="profile-info">
           <h1>{data.name}</h1>
-          <button className="edit-profile-btn">Edit Profile</button>
         </div>
       </div>
       

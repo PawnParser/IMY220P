@@ -5,9 +5,13 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 COPY package-lock.json ./
+COPY backend/package*.json ./backend/
 
-# Install dependencies
+# Install root dependencies
 RUN npm install
+
+# Install backend dependencies
+RUN cd backend && npm install
 
 # Copy backend files
 COPY backend/ ./backend/

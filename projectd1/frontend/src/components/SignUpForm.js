@@ -1,12 +1,14 @@
-// Author u22857941 : Christopher Yoko
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 import './Form.css';
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
+    name: '',
     password: '',
     confirmPassword: ''
   });
@@ -42,6 +44,16 @@ const SignUpForm = () => {
       newErrors.username = 'Username must be at least 3 characters';
     }
     
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -68,34 +80,27 @@ const SignUpForm = () => {
     
     setIsLoading(true);
     
-    // Stubbed API call as per requirements
     try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
-        })
+      const result = await apiService.signup({
+        username: formData.username,
+        email: formData.email,
+        name: formData.name,
+        password: formData.password
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (result.success) {
         // Store user data and update auth state
-        login(data.user);
+        login(result.user);
         
         // Navigate to home page
         navigate('/home');
       } else {
-        alert('Sign up failed: ' + (data.message || 'Unknown error'));
+        setErrors({ submit: result.message || 'Sign up failed' });
       }
       
     } catch (error) {
       console.error('Signup error:', error);
-      alert('Sign up failed. Please try again.');
+      setErrors({ submit: 'Sign up failed. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -115,6 +120,34 @@ const SignUpForm = () => {
           placeholder="Choose a username"
         />
         {errors.username && <span className="error-text">{errors.username}</span>}
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="signup-email">Email</label>
+        <input
+          type="email"
+          id="signup-email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          className={errors.email ? 'error' : ''}
+          placeholder="Enter your email"
+        />
+        {errors.email && <span className="error-text">{errors.email}</span>}
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="signup-name">Full Name</label>
+        <input
+          type="text"
+          id="signup-name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className={errors.name ? 'error' : ''}
+          placeholder="Enter your full name"
+        />
+        {errors.name && <span className="error-text">{errors.name}</span>}
       </div>
       
       <div className="form-group">
@@ -144,6 +177,8 @@ const SignUpForm = () => {
         />
         {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
       </div>
+      
+      {errors.submit && <div className="error-text submit-error">{errors.submit}</div>}
       
       <button 
         type="submit" 
