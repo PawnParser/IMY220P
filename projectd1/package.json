@@ -9,8 +9,11 @@
     "start": "node backend/server.js",
     "server": "node backend/server.js",
     "dev:server": "concurrently \"npm run server\" \"npm run dev\"",
-    "heroku-postbuild": "npm run build",
-    "install-backend": "cd backend && npm install"
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "heroku-postbuild": "npm run build"
   },
   "keywords": [],
   "author": "",

@@ -13,12 +13,18 @@ RUN npm install
 # Copy all source code
 COPY . .
 
+# Install backend dependencies separately
+RUN cd backend && npm install --production
+
 # Build the frontend
-RUN cd frontend && npm run build
+RUN npm run build
 
 # Expose ports
-EXPOSE 3000
-EXPOSE 5000
+EXPOSE 3000 5000
 
-# Start both services using your existing script
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node backend/health-check.js
+
+# Start the application
 CMD ["npm", "run", "dev:server"]
