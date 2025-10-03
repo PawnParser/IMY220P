@@ -129,44 +129,43 @@ const ProfilePage = () => {
     }
   };
 
-  const handleFriendAction = async (action) => {
-    try {
-      const token = localStorage.getItem('token');
-      let response;
-      
-      if (action === 'add') {
-        response = await apiService.sendFriendRequest(id, token);
-        if (response && response.success) {
-          setHasSentRequest(true);
-        }
-      } else if (action === 'remove') {
-        response = await apiService.removeFriend(id, token);
-        if (response && response.success) {
-          setIsFriend(false);
-          setHasSentRequest(false);
-        }
-      } else if (action === 'cancel') {
-        // You might want to implement cancel request functionality
-        console.log('Cancel friend request');
+// In the handleFriendAction function, update the remove friend part:
+const handleFriendAction = async (action) => {
+  try {
+    const token = localStorage.getItem('token');
+    let response;
+    
+    if (action === 'add') {
+      response = await apiService.sendFriendRequest(id, token);
+      if (response && response.success) {
+        setHasSentRequest(true);
+        alert('Friend request sent!');
       }
-      
-      // Reload profile data to get updated friend status
-      loadProfileData();
-    } catch (error) {
-      console.error('Friend action error:', error);
-      // Show user-friendly error message
-      if (error.message && error.message.includes('Cannot friend yourself')) {
-        alert('You cannot send a friend request to yourself.');
-      } else if (error.message && error.message.includes('Already friends')) {
-        alert('You are already friends with this user.');
-      } else if (error.message && error.message.includes('Friend request already sent')) {
-        alert('Friend request already sent.');
-      } else {
-        alert('An error occurred. Please try again.');
+    } else if (action === 'remove') {
+      response = await apiService.removeFriend(id, token);
+      if (response && response.success) {
+        setIsFriend(false);
+        setHasSentRequest(false);
+        alert('Friend removed');
       }
     }
-  };
-
+    
+    // Reload profile data to get updated friend status
+    loadProfileData();
+  } catch (error) {
+    console.error('Friend action error:', error);
+    // Show user-friendly error message
+    if (error.message && error.message.includes('Cannot friend yourself')) {
+      alert('You cannot send a friend request to yourself.');
+    } else if (error.message && error.message.includes('Already friends')) {
+      alert('You are already friends with this user.');
+    } else if (error.message && error.message.includes('Friend request already sent')) {
+      alert('Friend request already sent.');
+    } else {
+      alert('An error occurred. Please try again.');
+    }
+  }
+};
   if (isLoading) {
     return <div className="loading">Loading profile...</div>;
   }

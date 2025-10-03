@@ -1,5 +1,5 @@
 // API service functions
-const API_BASE = '';
+const API_BASE = 'http://localhost:5000';
 
 export const apiService = {
   // Authentication
@@ -59,62 +59,97 @@ export const apiService = {
   },
 
   // Friends
-sendFriendRequest: async (username, token) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/friends/request/${username}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+  async sendFriendRequest(username, token) {
+    try {
+      const response = await fetch(`${API_BASE}/api/friends/request/${username}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to send friend request');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Send friend request error:', error);
-    throw error;
-  }
-},
-
-  async acceptFriendRequest(username, token) {
-    const response = await fetch(`${API_BASE}/api/friends/accept/${username}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send friend request');
       }
-    });
-    return await response.json();
+      
+      return data;
+    } catch (error) {
+      console.error('Send friend request error:', error);
+      throw error;
+    }
   },
 
-  removeFriend: async (username, token) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/friends/${username}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+  async acceptFriendRequest(username, token) {
+    try {
+      const response = await fetch(`${API_BASE}/api/friends/accept/${username}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to remove friend');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to accept friend request');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Accept friend request error:', error);
+      throw error;
     }
-    
-    return data;
-  } catch (error) {
-    console.error('Remove friend error:', error);
-    throw error;
-  }
-},
+  },
+
+  async removeFriend(username, token) {
+    try {
+      const response = await fetch(`${API_BASE}/api/friends/${username}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to remove friend');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Remove friend error:', error);
+      throw error;
+    }
+  },
+
+  async getFriendRequests(token) {
+    try {
+      const response = await fetch(`${API_BASE}/api/friends/requests`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get friend requests');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Get friend requests error:', error);
+      throw error;
+    }
+  },
 
   // Projects
   async getProjects(token) {

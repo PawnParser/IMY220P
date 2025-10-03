@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import { Link } from 'react-router-dom';
 import Feed from '../components/Feed';
 import FriendList from '../components/FriendList';
+import FriendRequests from '../components/FriendRequests';
 import ProjectList from '../components/ProjectList';
 import CreateProject from '../components/CreateProject';
 import './HomePage.css';
@@ -13,6 +14,7 @@ const HomePage = () => {
   const [activities, setActivities] = useState([]);
   const [projects, setProjects] = useState([]);
   const [friends, setFriends] = useState({ online: [], offline: [] });
+  const [friendRequests, setFriendRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const { currentUser } = useAuth();
@@ -34,6 +36,17 @@ const HomePage = () => {
       } else {
         console.error('Failed to load projects:', projectsResponse.message);
         setProjects([]);
+      }
+
+      // Load friend requests
+      try {
+        const requestsResponse = await apiService.getFriendRequests(token);
+        if (requestsResponse.success) {
+          setFriendRequests(requestsResponse.users || []);
+        }
+      } catch (requestsError) {
+        console.log('Friend requests not available:', requestsError.message);
+        setFriendRequests([]);
       }
 
       // Load activities
@@ -168,6 +181,16 @@ const HomePage = () => {
         </div>
         
         <div className="sidebar">
+          {/* Friend Requests Section */}
+          {friendRequests.length > 0 && (
+            <div className="sidebar-section card">
+              <FriendRequests 
+                requests={friendRequests} 
+                onUpdate={loadData} 
+              />
+            </div>
+          )}
+          
           <div className="sidebar-section card">
             <div className="section-header">
               <h3>Your Projects</h3>

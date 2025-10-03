@@ -452,6 +452,34 @@ app.get('/api/users/:username', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/friends/requests', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.collection('users').findOne(
+      { username: req.user.username },
+      { projection: { friendRequests: 1 } }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Get details of users who sent friend requests
+    const requestingUsers = await db.collection('users').find(
+      { username: { $in: user.friendRequests || [] } },
+      { projection: { password: 0, email: 0, friendRequests: 0, friends: 0 } }
+    ).toArray();
+    
+    res.json({ 
+      success: true, 
+      requests: user.friendRequests || [],
+      users: requestingUsers
+    });
+  } catch (error) {
+    console.error('Get friend requests error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Friend Routes
 app.post('/api/friends/request/:username', authenticateToken, async (req, res) => {
   try {
