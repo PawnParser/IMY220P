@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [userProjects, setUserProjects] = useState([]);
+  const [savedProjects, setSavedProjects] = useState([]);
   const [userFriends, setUserFriends] = useState({ online: [], offline: [] });
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -121,6 +122,26 @@ const ProfilePage = () => {
         } catch (projectError) {
           console.error('Error loading projects:', projectError);
           setUserProjects([]);
+        }
+
+        // Load saved projects if viewing own profile
+        if (isOwner) {
+          try {
+            const savedResponse = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/users/saved-projects`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            const savedData = await savedResponse.json();
+            if (savedData.success) {
+              setSavedProjects(savedData.projects || []);
+            }
+          } catch (savedError) {
+            console.log('Saved projects not available:', savedError.message);
+            setSavedProjects([]);
+          }
         }
 
         // Load friends for ANY profile (not just own)
@@ -342,7 +363,7 @@ const ProfilePage = () => {
 
       <Profile data={profileData} />
 
-      {/* Tabs - Show Projects for everyone, Friends for own profile and friends */}
+      {/* Tabs - Show Projects for everyone, Friends for own profile and friends, Saved for own profile */}
       <div className="profile-tabs">
         <button 
           className={activeTab === 'projects' ? 'active' : ''}
@@ -350,6 +371,14 @@ const ProfilePage = () => {
         >
           Projects ({userProjects.length})
         </button>
+        {isOwner && (
+          <button 
+            className={activeTab === 'saved' ? 'active' : ''}
+            onClick={() => setActiveTab('saved')}
+          >
+            Saved Projects ({savedProjects.length})
+          </button>
+        )}
         {(isOwner || isFriend) && (
           <button 
             className={activeTab === 'friends' ? 'active' : ''}
@@ -389,6 +418,24 @@ const ProfilePage = () => {
                     Create your first project
                   </button>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Show saved projects only for own profile */}
+        {activeTab === 'saved' && isOwner && (
+          <div className="profile-saved">
+            <div className="saved-header">
+              <h2>Your Saved Projects</h2>
+              <span className="count-badge">{savedProjects.length}</span>
+            </div>
+            {savedProjects.length > 0 ? (
+              <ProjectList projects={savedProjects} />
+            ) : (
+              <div className="no-data">
+                <p>You haven't saved any projects yet.</p>
+                <p>Browse projects and save ones you're interested in!</p>
               </div>
             )}
           </div>

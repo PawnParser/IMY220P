@@ -18,22 +18,15 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
 
 // Configure multer for file uploads
-const storage = multer.memoryStorage(); // Store files in memory as Buffer
+const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   }
 });
 
-// MongoDB Connection - Use environment variable or fallback
+// MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://u22857941:Sm9x38gRbDdL4hKt@imy220prac5.41pvu.mongodb.net/versioncontrol?retryWrites=true&w=majority';
 
 console.log('Environment:', process.env.NODE_ENV);
@@ -49,7 +42,6 @@ app.use(express.json());
 async function connectToDatabase() {
   try {
     console.log('🔌 Attempting to connect to MongoDB...');
-    console.log('Connection string:', MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@'));
 
     const client = new MongoClient(MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
@@ -64,9 +56,7 @@ async function connectToDatabase() {
     await db.command({ ping: 1 });
     console.log('✅ MongoDB ping successful');
 
-    const collections = await db.listCollections().toArray();
-    console.log('📁 Existing collections:', collections.map(c => c.name));
-
+    // Create indexes
     try {
       await db.collection('users').createIndex({ username: 1 }, { unique: true });
       await db.collection('users').createIndex({ email: 1 }, { unique: true });
@@ -85,13 +75,13 @@ async function connectToDatabase() {
   }
 }
 
-// Initialize sample data with more users
+// Initialize sample data
 async function initializeSampleData() {
   const usersCount = await db.collection('users').countDocuments();
   if (usersCount === 0) {
     const hashedPassword = await bcrypt.hash('password123', 10);
 
-    // Create 12 sample users
+    // Create sample users
     const users = [
       {
         username: 'john_doe',
@@ -140,102 +130,6 @@ async function initializeSampleData() {
         friendRequests: [],
         savedProjects: [],
         createdAt: new Date()
-      },
-      {
-        username: 'alex_kumar',
-        email: 'alex@example.com',
-        password: hashedPassword,
-        name: 'Alex Kumar',
-        bio: 'DevOps engineer and cloud specialist',
-        avatar: '/assets/images/dp.jpg',
-        friends: ['jane_smith'],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'lisa_rodriguez',
-        email: 'lisa@example.com',
-        password: hashedPassword,
-        name: 'Lisa Rodriguez',
-        bio: 'Full-stack JavaScript developer',
-        avatar: '/assets/images/dp.jpg',
-        friends: ['mike_chen'],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'david_brown',
-        email: 'david@example.com',
-        password: hashedPassword,
-        name: 'David Brown',
-        bio: 'Python developer and data scientist',
-        avatar: '/assets/images/dp.jpg',
-        friends: ['sarah_wilson'],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'emma_johnson',
-        email: 'emma@example.com',
-        password: hashedPassword,
-        name: 'Emma Johnson',
-        bio: 'React specialist and open source contributor',
-        avatar: '/assets/images/dp.jpg',
-        friends: [],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'ryan_lee',
-        email: 'ryan@example.com',
-        password: hashedPassword,
-        name: 'Ryan Lee',
-        bio: 'Java backend developer',
-        avatar: '/assets/images/dp.jpg',
-        friends: [],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'sophia_martinez',
-        email: 'sophia@example.com',
-        password: hashedPassword,
-        name: 'Sophia Martinez',
-        bio: 'UI/UX designer and frontend developer',
-        avatar: '/assets/images/dp.jpg',
-        friends: [],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'adam_wilson',
-        email: 'adam@example.com',
-        password: hashedPassword,
-        name: 'Adam Wilson',
-        bio: 'Database administrator and SQL expert',
-        avatar: '/assets/images/dp.jpg',
-        friends: [],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
-      },
-      {
-        username: 'olivia_taylor',
-        email: 'olivia@example.com',
-        password: hashedPassword,
-        name: 'Olivia Taylor',
-        bio: 'Mobile game developer',
-        avatar: '/assets/images/dp.jpg',
-        friends: [],
-        friendRequests: [],
-        savedProjects: [],
-        createdAt: new Date()
       }
     ];
 
@@ -253,11 +147,12 @@ async function initializeSampleData() {
         owner: 'john_doe',
         members: ['john_doe', 'jane_smith'],
         files: [
-          { name: 'package.json', path: '/', type: 'file' },
+          { name: 'package.json', path: '/', type: 'file', content: '{}' },
           { name: 'src', path: '/', type: 'folder' },
-          { name: 'App.js', path: '/src', type: 'file' }
+          { name: 'App.js', path: '/src', type: 'file', content: 'import React from "react";' }
         ],
         branches: ['main', 'development'],
+        status: 'checked-in',
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -270,43 +165,12 @@ async function initializeSampleData() {
         owner: 'jane_smith',
         members: ['jane_smith'],
         files: [
-          { name: 'App.js', path: '/', type: 'file' },
+          { name: 'App.js', path: '/', type: 'file', content: 'import React from "react";' },
           { name: 'components', path: '/', type: 'folder' },
-          { name: 'TaskList.js', path: '/components', type: 'file' }
+          { name: 'TaskList.js', path: '/components', type: 'file', content: 'const TaskList = () => {};' }
         ],
         branches: ['main'],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        name: 'API Gateway',
-        description: 'Microservices API gateway with authentication',
-        type: 'web',
-        hashtags: ['microservices', 'api', 'nodejs'],
-        image: '/assets/images/project1.jpg',
-        owner: 'mike_chen',
-        members: ['mike_chen'],
-        files: [
-          { name: 'server.js', path: '/', type: 'file' },
-          { name: 'routes', path: '/', type: 'folder' }
-        ],
-        branches: ['main'],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        name: 'Data Analytics Dashboard',
-        description: 'Real-time data visualization dashboard',
-        type: 'web',
-        hashtags: ['react', 'd3', 'analytics'],
-        image: '/assets/images/project2.jpg',
-        owner: 'sarah_wilson',
-        members: ['sarah_wilson'],
-        files: [
-          { name: 'dashboard.js', path: '/', type: 'file' },
-          { name: 'components', path: '/', type: 'folder' }
-        ],
-        branches: ['main'],
+        status: 'checked-out',
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -315,34 +179,25 @@ async function initializeSampleData() {
     const insertedProjects = await db.collection('projects').insertMany(projects);
     console.log('Sample projects created');
 
-    // Create sample check-in messages
+    // Create sample check-ins
     const checkins = [
       {
         projectId: insertedProjects.insertedIds[0],
         userId: 'john_doe',
-        message: 'Implemented user authentication system',
-        comment: 'Added JWT-based authentication with refresh tokens',
-        files: ['/src/auth.js', '/src/middleware/auth.js'],
+        message: 'Initial project setup',
+        comment: 'Created basic project structure with React and Node.js',
+        files: ['/package.json', '/src/App.js'],
         branch: 'main',
         createdAt: new Date()
       },
       {
         projectId: insertedProjects.insertedIds[0],
         userId: 'jane_smith',
-        message: 'Fixed responsive design issues',
-        comment: 'Improved mobile responsiveness across all components',
-        files: ['/src/components/Header.js', '/src/components/Footer.js'],
+        message: 'Added authentication system',
+        comment: 'Implemented JWT-based authentication with refresh tokens',
+        files: ['/src/auth.js', '/src/middleware/auth.js'],
         branch: 'main',
         createdAt: new Date(Date.now() - 3600000)
-      },
-      {
-        projectId: insertedProjects.insertedIds[1],
-        userId: 'jane_smith',
-        message: 'Added task completion functionality',
-        comment: 'Users can now mark tasks as complete with animation',
-        files: ['/components/TaskItem.js', '/components/TaskList.js'],
-        branch: 'main',
-        createdAt: new Date(Date.now() - 7200000)
       }
     ];
 
@@ -403,14 +258,11 @@ app.post('/api/login', async (req, res) => {
       });
     }
 
-    console.log('Login attempt for user:', username);
-
     const user = await db.collection('users').findOne({
       $or: [{ username }, { email: username }]
     });
 
     if (!user) {
-      console.log('User not found:', username);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -420,7 +272,6 @@ app.post('/api/login', async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.log('Invalid password for user:', username);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -432,8 +283,6 @@ app.post('/api/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '24h' }
     );
-
-    console.log('Login successful for user:', username);
 
     res.json({
       success: true,
@@ -531,7 +380,6 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Updated profile endpoint to handle file uploads
 app.put('/api/users/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const { name, bio } = req.body;
@@ -565,43 +413,6 @@ app.put('/api/users/profile', authenticateToken, upload.single('avatar'), async 
     console.error('Update profile error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
-});
-
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(503).json({
-        status: 'error',
-        message: 'Database not connected',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    await db.command({ ping: 1 });
-
-    res.json({
-      status: 'ok',
-      message: 'Server and database are healthy',
-      timestamp: new Date().toISOString(),
-      database: 'connected'
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: 'error',
-      message: 'Database connection failed',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Simple test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({
-    message: 'Backend is running!',
-    timestamp: new Date().toISOString()
-  });
 });
 
 app.get('/api/users/:username', authenticateToken, async (req, res) => {
@@ -646,6 +457,7 @@ app.get('/api/users/:username/friends', authenticateToken, async (req, res) => {
   }
 });
 
+// Friend Routes
 app.get('/api/friends/requests', authenticateToken, async (req, res) => {
   try {
     const user = await db.collection('users').findOne(
@@ -673,7 +485,6 @@ app.get('/api/friends/requests', authenticateToken, async (req, res) => {
   }
 });
 
-// Friend Routes
 app.post('/api/friends/request/:username', authenticateToken, async (req, res) => {
   try {
     const targetUser = await db.collection('users').findOne({
@@ -753,7 +564,6 @@ app.delete('/api/friends/:username', authenticateToken, async (req, res) => {
 app.get('/api/projects', authenticateToken, async (req, res) => {
   try {
     const projects = await db.collection('projects').find({}).toArray();
-
     res.json({ success: true, projects });
   } catch (error) {
     console.error('Get projects error:', error);
@@ -788,7 +598,7 @@ app.get('/api/projects/:id', authenticateToken, async (req, res) => {
 
 app.post('/api/projects', authenticateToken, async (req, res) => {
   try {
-    const { name, description, type, hashtags, image, files } = req.body;
+    const { name, description, type, hashtags, image } = req.body;
 
     const newProject = {
       name,
@@ -798,8 +608,9 @@ app.post('/api/projects', authenticateToken, async (req, res) => {
       image: image || '/assets/images/default-project.jpg',
       owner: req.user.username,
       members: [req.user.username],
-      files: files || [],
+      files: [],
       branches: ['main'],
+      status: 'checked-in',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -827,7 +638,7 @@ app.put('/api/projects/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (project.owner !== req.user.username) {
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
@@ -859,7 +670,6 @@ app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
     }
 
     await db.collection('projects').deleteOne({ _id: new ObjectId(req.params.id) });
-
     await db.collection('checkins').deleteMany({ projectId: new ObjectId(req.params.id) });
 
     res.json({ success: true, message: 'Project deleted' });
@@ -869,12 +679,273 @@ app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Save project to user's saved projects
+// Project Member Management
+app.post('/api/projects/:id/members', authenticateToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username) {
+      return res.status(403).json({ success: false, message: 'Only project owner can add members' });
+    }
+
+    // Check if user is friend
+    const currentUser = await db.collection('users').findOne({ username: req.user.username });
+    if (!currentUser.friends.includes(username)) {
+      return res.status(400).json({ success: false, message: 'Can only add friends as members' });
+    }
+
+    // Check if user exists
+    const newMember = await db.collection('users').findOne({ username });
+    if (!newMember) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (project.members.includes(username)) {
+      return res.status(400).json({ success: false, message: 'User is already a member' });
+    }
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $push: { members: username } }
+    );
+
+    res.json({ success: true, message: 'Member added to project' });
+  } catch (error) {
+    console.error('Add member error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.delete('/api/projects/:id/members/:username', authenticateToken, async (req, res) => {
+  try {
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username) {
+      return res.status(403).json({ success: false, message: 'Only project owner can remove members' });
+    }
+
+    if (req.params.username === project.owner) {
+      return res.status(400).json({ success: false, message: 'Cannot remove project owner' });
+    }
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $pull: { members: req.params.username } }
+    );
+
+    res.json({ success: true, message: 'Member removed from project' });
+  } catch (error) {
+    console.error('Remove member error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.post('/api/projects/:id/transfer-ownership', authenticateToken, async (req, res) => {
+  try {
+    const { newOwner } = req.body;
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username) {
+      return res.status(403).json({ success: false, message: 'Only project owner can transfer ownership' });
+    }
+
+    // Check if new owner is a member
+    if (!project.members.includes(newOwner)) {
+      return res.status(400).json({ success: false, message: 'New owner must be a project member' });
+    }
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { owner: newOwner } }
+    );
+
+    res.json({ success: true, message: 'Project ownership transferred' });
+  } catch (error) {
+    console.error('Transfer ownership error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Project Files Management
+app.post('/api/projects/:id/files', authenticateToken, async (req, res) => {
+  try {
+    const { file } = req.body;
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $push: { files: file } }
+    );
+
+    res.json({ success: true, message: 'File added to project' });
+  } catch (error) {
+    console.error('Add file error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.put('/api/projects/:id/files/:filename', authenticateToken, async (req, res) => {
+  try {
+    const { content } = req.body;
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Update file content
+    const updatedFiles = project.files.map(file => 
+      file.name === req.params.filename ? { ...file, content } : file
+    );
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { files: updatedFiles } }
+    );
+
+    res.json({ success: true, message: 'File updated' });
+  } catch (error) {
+    console.error('Update file error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.delete('/api/projects/:id/files/:filename', authenticateToken, async (req, res) => {
+  try {
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const updatedFiles = project.files.filter(file => file.name !== req.params.filename);
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { files: updatedFiles } }
+    );
+
+    res.json({ success: true, message: 'File deleted' });
+  } catch (error) {
+    console.error('Delete file error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Project Status Management
+app.post('/api/projects/:id/checkout', authenticateToken, async (req, res) => {
+  try {
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { status: 'checked-out', updatedAt: new Date() } }
+    );
+
+    res.json({ success: true, message: 'Project checked out' });
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.post('/api/projects/:id/checkin', authenticateToken, async (req, res) => {
+  try {
+    const { message, comment, files, branch } = req.body;
+    const project = await db.collection('projects').findOne({
+      _id: new ObjectId(req.params.id)
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.owner !== req.user.username && !project.members.includes(req.user.username)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Create check-in record
+    const newCheckin = {
+      projectId: new ObjectId(req.params.id),
+      userId: req.user.username,
+      message,
+      comment: comment || '',
+      files: files || [],
+      branch: branch || 'main',
+      createdAt: new Date()
+    };
+
+    await db.collection('checkins').insertOne(newCheckin);
+
+    // Update project status
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { status: 'checked-in', updatedAt: new Date() } }
+    );
+
+    res.status(201).json({ success: true, message: 'Check-in created', checkin: newCheckin });
+  } catch (error) {
+    console.error('Checkin error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Save/Unsave Projects
 app.post('/api/projects/:id/save', authenticateToken, async (req, res) => {
   try {
     const projectId = req.params.id;
     
-    // Add project to user's saved projects
     await db.collection('users').updateOne(
       { username: req.user.username },
       { 
@@ -889,12 +960,10 @@ app.post('/api/projects/:id/save', authenticateToken, async (req, res) => {
   }
 });
 
-// Remove project from user's saved projects
 app.post('/api/projects/:id/unsave', authenticateToken, async (req, res) => {
   try {
     const projectId = req.params.id;
     
-    // Remove project from user's saved projects
     await db.collection('users').updateOne(
       { username: req.user.username },
       { 
@@ -909,7 +978,6 @@ app.post('/api/projects/:id/unsave', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user's saved projects
 app.get('/api/users/saved-projects', authenticateToken, async (req, res) => {
   try {
     const user = await db.collection('users').findOne(
@@ -932,34 +1000,6 @@ app.get('/api/users/saved-projects', authenticateToken, async (req, res) => {
 });
 
 // Check-in Routes
-app.post('/api/projects/:id/checkin', authenticateToken, async (req, res) => {
-  try {
-    const { message, comment, files, branch } = req.body;
-
-    const newCheckin = {
-      projectId: new ObjectId(req.params.id),
-      userId: req.user.username,
-      message,
-      comment: comment || '',
-      files: files || [],
-      branch: branch || 'main',
-      createdAt: new Date()
-    };
-
-    await db.collection('checkins').insertOne(newCheckin);
-
-    await db.collection('projects').updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: { updatedAt: new Date() } }
-    );
-
-    res.status(201).json({ success: true, message: 'Check-in created', checkin: newCheckin });
-  } catch (error) {
-    console.error('Create checkin error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
 app.get('/api/projects/:id/checkins', authenticateToken, async (req, res) => {
   try {
     const checkins = await db.collection('checkins')
@@ -1055,16 +1095,6 @@ app.get('/api/activity/local', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/init-data', async (req, res) => {
-  try {
-    await initializeSampleData();
-    res.json({ success: true, message: 'Sample data initialized' });
-  } catch (error) {
-    console.error('Data initialization error:', error);
-    res.status(500).json({ success: false, message: 'Failed to initialize data' });
-  }
-});
-
 // Search Routes
 app.get('/api/search', authenticateToken, async (req, res) => {
   try {
@@ -1097,20 +1127,6 @@ app.get('/api/search', authenticateToken, async (req, res) => {
       }).toArray();
 
       results.projects = projects;
-    }
-
-    if (!type || type === 'checkins') {
-      const checkins = await db.collection('checkins')
-        .find({ 
-          $or: [
-            { message: { $regex: q, $options: 'i' } },
-            { comment: { $regex: q, $options: 'i' } }
-          ]
-        })
-        .sort({ createdAt: -1 })
-        .toArray();
-
-      results.checkins = checkins;
     }
 
     res.json({ success: true, results });
