@@ -695,6 +695,31 @@ app.post('/api/friends/request/:username', authenticateToken, async (req, res) =
   }
 });
 
+// Get user's friends with details
+app.get('/api/users/:username/friends', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.collection('users').findOne(
+      { username: req.params.username },
+      { projection: { friends: 1 } }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Get detailed friend information
+    const friends = await db.collection('users').find(
+      { username: { $in: user.friends || [] } },
+      { projection: { password: 0, email: 0, friendRequests: 0, friends: 0 } }
+    ).toArray();
+
+    res.json({ success: true, friends });
+  } catch (error) {
+    console.error('Get friends error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 app.post('/api/friends/accept/:username', authenticateToken, async (req, res) => {
   try {
     await db.collection('users').updateOne(

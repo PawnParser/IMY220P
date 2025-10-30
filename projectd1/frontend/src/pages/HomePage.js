@@ -13,6 +13,7 @@ const HomePage = () => {
   const [activeFeed, setActiveFeed] = useState('local');
   const [activities, setActivities] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [savedProjects, setSavedProjects] = useState([]);
   const [friends, setFriends] = useState({ online: [], offline: [] });
   const [friendRequests, setFriendRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,11 +32,19 @@ const HomePage = () => {
       // Load projects
       const projectsResponse = await apiService.getProjects(token);
       if (projectsResponse.success) {
-        console.log('Loaded projects:', projectsResponse.projects);
-        setProjects(projectsResponse.projects);
-      } else {
-        console.error('Failed to load projects:', projectsResponse.message);
-        setProjects([]);
+        const allProjects = projectsResponse.projects || [];
+        
+        // User's own projects
+        const userProjects = allProjects.filter(project => 
+          project.owner === currentUser?.username
+        );
+        setProjects(userProjects);
+
+        // Saved projects (projects from friends)
+        const friendProjects = allProjects.filter(project => 
+          project.owner !== currentUser?.username
+        );
+        setSavedProjects(friendProjects);
       }
 
       // Load friend requests
@@ -56,7 +65,6 @@ const HomePage = () => {
           : await apiService.getGlobalActivity(token);
         
         if (activityResponse.success) {
-          console.log('Loaded activities:', activityResponse.activities);
           const formattedActivities = activityResponse.activities.map(activity => ({
             id: activity._id,
             user: activity.user && activity.user[0] ? activity.user[0].name : activity.userId,
@@ -69,25 +77,14 @@ const HomePage = () => {
           setActivities(formattedActivities);
         }
       } catch (activityError) {
-        console.log('Activities not available yet, using sample data');
-        setActivities([
-          {
-            id: 1,
-            user: 'john_doe',
-            userAvatar: null,
-            project: 'E-commerce Website',
-            message: 'Implemented user authentication',
-            comment: 'Added JWT-based authentication system',
-            time: '2 hours ago'
-          }
-        ]);
+        console.log('Activities not available yet');
+        setActivities([]);
       }
 
       // Load friends with actual data
       try {
         const profileResponse = await apiService.getProfile(token);
         if (profileResponse.success && profileResponse.user.friends) {
-          // Get friend details
           const friendsResponse = await apiService.getUserFriends(currentUser.username, token);
           if (friendsResponse.success) {
             const friendList = friendsResponse.friends.map((friend, index) => ({
@@ -95,7 +92,7 @@ const HomePage = () => {
               username: friend.username,
               name: friend.name,
               avatar: friend.avatar,
-              online: Math.random() > 0.5 // Simulate online status
+              online: Math.random() > 0.5
             }));
             
             setFriends({
@@ -105,10 +102,10 @@ const HomePage = () => {
           }
         }
       } catch (friendError) {
-        console.log('Friends not available, using sample data');
+        console.log('Friends not available');
         setFriends({
-          online: [{ id: 1, username: 'jane_smith', name: 'Jane Smith', avatar: null, online: true }],
-          offline: [{ id: 2, username: 'john_doe', name: 'John Doe', avatar: null, online: false }]
+          online: [],
+          offline: []
         });
       }
 
@@ -215,6 +212,21 @@ const HomePage = () => {
                 >
                   Create your first project
                 </button>
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar-section card">
+            <div className="section-header">
+              <h3>Saved Projects</h3>
+              <span className="count-badge">{savedProjects.length}</span>
+            </div>
+            {savedProjects.length > 0 ? (
+              <ProjectList projects={savedProjects} />
+            ) : (
+              <div className="no-data">
+                <p>No saved projects yet.</p>
+                <p>Add friends to see their projects!</p>
               </div>
             )}
           </div>

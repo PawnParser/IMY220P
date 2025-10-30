@@ -42,12 +42,9 @@ const ProfilePage = () => {
       let userData;
       let targetUsername = id;
 
-      console.log('Loading profile for:', { id, currentUser: currentUser.username });
-
       // Determine if we're viewing own profile or someone else's
       if (!targetUsername || targetUsername === 'me' || targetUsername === currentUser.username) {
         // Viewing own profile
-        console.log('Viewing own profile');
         const response = await apiService.getProfile(token);
         if (response.success) {
           userData = response.user;
@@ -58,7 +55,6 @@ const ProfilePage = () => {
         }
       } else {
         // Viewing someone else's profile
-        console.log('Viewing other profile:', targetUsername);
         const response = await apiService.getUser(targetUsername, token);
         if (response.success) {
           userData = response.user;
@@ -69,7 +65,6 @@ const ProfilePage = () => {
           if (currentUserResponse.success) {
             const currentUserFriends = currentUserResponse.user.friends || [];
             const friendshipStatus = currentUserFriends.includes(targetUsername);
-            console.log('Friendship status:', friendshipStatus);
             setIsFriend(friendshipStatus);
             
             // Check if request was sent (only check if not friends)
@@ -78,7 +73,6 @@ const ProfilePage = () => {
               if (targetUserResponse.success) {
                 const targetUserFriendRequests = targetUserResponse.user.friendRequests || [];
                 const requestStatus = targetUserFriendRequests.includes(currentUser.username);
-                console.log('Request status:', requestStatus);
                 setHasSentRequest(requestStatus);
               }
             } else {
@@ -93,7 +87,6 @@ const ProfilePage = () => {
       }
 
       if (userData) {
-        console.log('Setting profile data for:', userData.username);
         setProfileData({
           name: userData.name,
           bio: userData.bio,
@@ -110,35 +103,50 @@ const ProfilePage = () => {
           bio: userData.bio || ''
         });
 
-        // ALWAYS load projects for the target user
-        const projectsResponse = await apiService.getProjects(token);
-        if (projectsResponse.success) {
-          const userProjects = projectsResponse.projects.filter(
-            project => project.owner === targetUsername
-          );
-          console.log('Found projects:', userProjects.length, 'for user:', targetUsername);
-          setUserProjects(userProjects);
-          setProfileData(prev => ({
-            ...prev,
-            projects: userProjects.length
-          }));
+        // Load ALL projects from the database and filter by owner
+        try {
+          const projectsResponse = await apiService.getProjects(token);
+          if (projectsResponse.success) {
+            const allProjects = projectsResponse.projects || [];
+            const userProjects = allProjects.filter(
+              project => project.owner === targetUsername
+            );
+            console.log(`Found ${userProjects.length} projects for ${targetUsername}`);
+            setUserProjects(userProjects);
+            setProfileData(prev => ({
+              ...prev,
+              projects: userProjects.length
+            }));
+          }
+        } catch (projectError) {
+          console.error('Error loading projects:', projectError);
+          setUserProjects([]);
         }
 
-        // ONLY load friends if viewing own profile
+        // Load friends if viewing own profile
         if (isOwner) {
-          const friendsResponse = await apiService.getUserFriends(targetUsername, token);
-          if (friendsResponse.success) {
-            const formattedFriends = {
-              online: friendsResponse.friends.map(friend => ({
-                id: friend._id,
-                username: friend.username,
-                name: friend.name,
-                avatar: friend.avatar,
-                online: Math.random() > 0.5
-              })),
-              offline: []
-            };
-            setUserFriends(formattedFriends);
+          try {
+            const friendsResponse = await apiService.getUserFriends(targetUsername, token);
+            if (friendsResponse.success) {
+              const friends = friendsResponse.friends || [];
+              console.log(`Found ${friends.length} friends for ${targetUsername}`);
+              
+              // Format friends for FriendList component
+              const formattedFriends = {
+                online: friends.map(friend => ({
+                  id: friend._id,
+                  username: friend.username,
+                  name: friend.name,
+                  avatar: friend.avatar,
+                  online: Math.random() > 0.5
+                })),
+                offline: []
+              };
+              setUserFriends(formattedFriends);
+            }
+          } catch (friendError) {
+            console.error('Error loading friends:', friendError);
+            setUserFriends({ online: [], offline: [] });
           }
         }
       } else {
@@ -191,11 +199,7 @@ const ProfilePage = () => {
   const handleFriendAction = async (action) => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Get the actual target username from the URL parameter
       const targetUsername = id;
-      
-      console.log('Friend action:', action, 'on user:', targetUsername, 'current user:', currentUser.username);
       
       if (targetUsername === currentUser.username) {
         alert('You cannot friend yourself.');
@@ -218,18 +222,10 @@ const ProfilePage = () => {
           alert('Friend removed');
         }
       }
-      loadProfileData(); // Reload to update status
+      loadProfileData();
     } catch (error) {
       console.error('Friend action error:', error);
-      if (error.message && error.message.includes('Cannot friend yourself')) {
-        alert('You cannot send a friend request to yourself.');
-      } else if (error.message && error.message.includes('Already friends')) {
-        alert('You are already friends with this user.');
-      } else if (error.message && error.message.includes('Friend request already sent')) {
-        alert('Friend request already sent.');
-      } else {
-        alert('An error occurred. Please try again.');
-      }
+      alert('An error occurred. Please try again.');
     }
   };
 

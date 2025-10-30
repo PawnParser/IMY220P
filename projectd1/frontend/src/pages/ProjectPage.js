@@ -29,7 +29,6 @@ const ProjectPage = () => {
       
       const projectResponse = await apiService.getProject(id, token);
       if (projectResponse.success) {
-        console.log('Loaded project:', projectResponse.project);
         setProject(projectResponse.project);
       } else {
         console.error('Project not found:', projectResponse.message);
@@ -40,35 +39,21 @@ const ProjectPage = () => {
       try {
         const checkinsResponse = await apiService.getProjectCheckins(id, token);
         if (checkinsResponse.success) {
-          console.log('Loaded checkins:', checkinsResponse.checkins);
-          // Format checkins exactly like Feed component expects
           const formattedCheckins = checkinsResponse.checkins.map(checkin => ({
             id: checkin._id,
-            user: checkin.userId || 'Unknown User', // userId is the username string
+            user: checkin.userId || 'Unknown User',
             project: projectResponse.project.name,
             message: checkin.message || 'No message',
             comment: checkin.comment || '',
             time: checkin.createdAt ? new Date(checkin.createdAt).toLocaleString() : 'Just now'
           }));
-          console.log('Formatted checkins:', formattedCheckins);
           setCheckins(formattedCheckins);
         } else {
-          console.error('Failed to load checkins:', checkinsResponse.message);
           setCheckins([]);
         }
       } catch (checkinError) {
         console.error('Checkins error:', checkinError);
-        // Use sample data if checkins fail to load
-        setCheckins([
-          {
-            id: 'sample-1',
-            user: currentUser?.username || 'john_doe',
-            project: projectResponse.project.name,
-            message: 'Initial project setup',
-            comment: 'Created the basic project structure and files',
-            time: new Date().toLocaleString()
-          }
-        ]);
+        setCheckins([]);
       }
     } catch (error) {
       console.error('Error loading project:', error);
@@ -91,8 +76,8 @@ const ProjectPage = () => {
       
       if (response.success) {
         setNewCheckin({ message: '', comment: '' });
-        setActiveTab('activity'); // Switch to activity tab
-        loadProjectData(); // Reload to get new checkin
+        setActiveTab('activity');
+        loadProjectData();
         alert('Check-in created successfully!');
       } else {
         alert('Failed to create check-in: ' + response.message);
@@ -104,7 +89,24 @@ const ProjectPage = () => {
   };
 
   const handleDownload = () => {
-    alert('Download functionality would be implemented here');
+    // Create a simple file download
+    if (project.files && project.files.length > 0) {
+      const fileContents = project.files.map(file => 
+        `${file.type === 'folder' ? '📁' : '📄'} ${file.path}/${file.name}`
+      ).join('\n');
+      
+      const blob = new Blob([fileContents], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${project.name}_files.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      alert('No files to download');
+    }
   };
 
   const handleDeleteProject = async () => {
@@ -231,7 +233,6 @@ const ProjectPage = () => {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="modal-overlay">
           <div className="modal-content card">
