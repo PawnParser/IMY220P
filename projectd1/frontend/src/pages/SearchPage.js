@@ -59,7 +59,14 @@ const SearchPage = () => {
             <div className="users-grid">
               {results.users.map(user => (
                 <Link key={user._id} to={`/profile/${user.username}`} className="user-card">
-                  <img src={user.avatar || dpImage} alt={user.name} className="user-avatar" />
+                  <img 
+                    src={user.avatar || dpImage} 
+                    alt={user.name} 
+                    className="user-avatar" 
+                    onError={(e) => {
+                      e.target.src = dpImage;
+                    }}
+                  />
                   <div className="user-info">
                     <h3>{user.name}</h3>
                     <p>@{user.username}</p>

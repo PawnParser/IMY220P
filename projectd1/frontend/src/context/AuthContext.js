@@ -77,13 +77,37 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
+  const refreshUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch('/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setCurrentUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   const value = {
     currentUser,
     isAuthenticated,
     isLoading,
     login,
     logout,
-    getAuthHeaders
+    getAuthHeaders,
+    refreshUser
   };
 
   return (

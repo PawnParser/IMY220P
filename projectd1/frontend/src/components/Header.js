@@ -129,7 +129,15 @@ const Header = () => {
         </button>
 
         <div className="user-menu">
-          <img src={dpImage} alt={currentUser?.username} className="avatar" />
+          <img 
+            src={currentUser?.avatar || dpImage} 
+            alt={currentUser?.username} 
+            className="avatar" 
+            onError={(e) => {
+              // Fallback if the user's avatar fails to load
+              e.target.src = dpImage;
+            }}
+          />
           <span className="username">{currentUser?.username}</span>
           <button className="btn btn-danger" onClick={handleLogout}>
             Logout

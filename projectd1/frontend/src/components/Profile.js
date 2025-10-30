@@ -1,13 +1,20 @@
 // Author u22857941 : Christopher Yoko
 import React from 'react';
-import dpImage from '../assets/images/dp.jpg';
 import './Profile.css';
 
 const Profile = ({ data }) => {
   return (
     <div className="profile">
       <div className="profile-header">
-        <img src={dpImage} alt={data.name} className="profile-avatar" />
+        <img 
+          src={data.avatar} 
+          alt={data.name} 
+          className="profile-avatar" 
+          onError={(e) => {
+            // Fallback if image fails to load
+            e.target.src = '/assets/images/dp.jpg';
+          }}
+        />
         <div className="profile-info">
           <h1>{data.name}</h1>
         </div>

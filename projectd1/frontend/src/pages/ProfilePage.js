@@ -13,11 +13,13 @@ const ProfilePage = () => {
   const [userProjects, setUserProjects] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
   const [hasSentRequest, setHasSentRequest] = useState(false);
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
 
   useEffect(() => {
     loadProfileData();
@@ -31,7 +33,6 @@ const ProfilePage = () => {
       let userData;
       let targetUsername = id;
 
-      // If no ID specified or it's "me", use current user
       if (!targetUsername || targetUsername === 'me') {
         const response = await apiService.getProfile(token);
         if (response.success) {
@@ -40,21 +41,18 @@ const ProfilePage = () => {
           targetUsername = userData.username;
         }
       } else {
-        // Viewing other user's profile
         const response = await apiService.getUser(targetUsername, token);
         if (response.success) {
           userData = response.user;
           const isCurrentUser = currentUser?.username === targetUsername;
           setIsOwner(isCurrentUser);
-          
-          // Check if already friends (only if not the current user)
+
           if (!isCurrentUser && currentUser) {
             const currentUserResponse = await apiService.getProfile(token);
             if (currentUserResponse.success) {
               const currentUserFriends = currentUserResponse.user.friends || [];
               setIsFriend(currentUserFriends.includes(targetUsername));
-              
-              // Check if friend request already sent
+
               const targetUserResponse = await apiService.getUser(targetUsername, token);
               if (targetUserResponse.success) {
                 const targetUserFriendRequests = targetUserResponse.user.friendRequests || [];
@@ -82,15 +80,12 @@ const ProfilePage = () => {
           bio: userData.bio || ''
         });
 
-        // Load user's projects
         const projectsResponse = await apiService.getProjects(token);
         if (projectsResponse.success) {
           const userProjects = projectsResponse.projects.filter(
             project => project.owner === targetUsername
           );
           setUserProjects(userProjects);
-          
-          // Update projects count
           setProfileData(prev => ({
             ...prev,
             projects: userProjects.length
@@ -112,60 +107,78 @@ const ProfilePage = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await apiService.updateProfile(editForm, token);
-      
+      const formData = new FormData();
+
+      formData.append('name', editForm.name);
+      formData.append('bio', editForm.bio);
+      if (selectedImage) {
+        formData.append('avatar', selectedImage);
+      }
+
+      const response = await apiService.updateProfile(formData, token, true);
+
       if (response.success) {
         setProfileData(prev => ({
           ...prev,
           name: editForm.name,
           bio: editForm.bio,
-          about: editForm.bio
+          about: editForm.bio,
+          avatar: response.user?.avatar || previewImage || profileData.avatar
         }));
+
+        if (refreshUser) {
+          await refreshUser();
+        }
+
         setIsEditing(false);
-        loadProfileData(); // Reload to get updated data
+        setSelectedImage(null);
+        setPreviewImage(null);
+
+        loadProfileData();
+      } else {
+        console.error('Update failed:', response);
+        alert('Failed to update profile: ' + response.message);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Error updating profile: ' + error.message);
     }
   };
 
-// In the handleFriendAction function, update the remove friend part:
-const handleFriendAction = async (action) => {
-  try {
-    const token = localStorage.getItem('token');
-    let response;
-    
-    if (action === 'add') {
-      response = await apiService.sendFriendRequest(id, token);
-      if (response && response.success) {
-        setHasSentRequest(true);
-        alert('Friend request sent!');
+  const handleFriendAction = async (action) => {
+    try {
+      const token = localStorage.getItem('token');
+      let response;
+
+      if (action === 'add') {
+        response = await apiService.sendFriendRequest(id, token);
+        if (response && response.success) {
+          setHasSentRequest(true);
+          alert('Friend request sent!');
+        }
+      } else if (action === 'remove') {
+        response = await apiService.removeFriend(id, token);
+        if (response && response.success) {
+          setIsFriend(false);
+          setHasSentRequest(false);
+          alert('Friend removed');
+        }
       }
-    } else if (action === 'remove') {
-      response = await apiService.removeFriend(id, token);
-      if (response && response.success) {
-        setIsFriend(false);
-        setHasSentRequest(false);
-        alert('Friend removed');
+      loadProfileData();
+    } catch (error) {
+      console.error('Friend action error:', error);
+      if (error.message && error.message.includes('Cannot friend yourself')) {
+        alert('You cannot send a friend request to yourself.');
+      } else if (error.message && error.message.includes('Already friends')) {
+        alert('You are already friends with this user.');
+      } else if (error.message && error.message.includes('Friend request already sent')) {
+        alert('Friend request already sent.');
+      } else {
+        alert('An error occurred. Please try again.');
       }
     }
-    
-    // Reload profile data to get updated friend status
-    loadProfileData();
-  } catch (error) {
-    console.error('Friend action error:', error);
-    // Show user-friendly error message
-    if (error.message && error.message.includes('Cannot friend yourself')) {
-      alert('You cannot send a friend request to yourself.');
-    } else if (error.message && error.message.includes('Already friends')) {
-      alert('You are already friends with this user.');
-    } else if (error.message && error.message.includes('Friend request already sent')) {
-      alert('Friend request already sent.');
-    } else {
-      alert('An error occurred. Please try again.');
-    }
-  }
-};
+  };
+
   if (isLoading) {
     return <div className="loading">Loading profile...</div>;
   }
@@ -178,26 +191,82 @@ const handleFriendAction = async (action) => {
     <div className="profile-page">
       <div className="profile-header-section">
         {isEditing ? (
-          <form onSubmit={handleEditSubmit} className="edit-profile-form">
+          <form
+            onSubmit={handleEditSubmit}
+            className="edit-profile-form"
+            encType="multipart/form-data"
+          >
             <div className="form-group">
               <label>Name:</label>
               <input
                 type="text"
                 value={editForm.name}
-                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, name: e.target.value }))
+                }
               />
             </div>
+
             <div className="form-group">
               <label>Bio:</label>
               <textarea
                 value={editForm.bio}
-                onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, bio: e.target.value }))
+                }
                 rows="3"
               />
             </div>
+
+            <div className="form-group">
+              <label>Profile Picture:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setSelectedImage(file);
+                    setPreviewImage(URL.createObjectURL(file));
+                  }
+                }}
+              />
+
+              {(previewImage || profileData?.avatar) && (
+                <div className="image-preview" style={{ marginTop: '1rem' }}>
+                  <img
+                    src={previewImage || profileData.avatar}
+                    alt="Preview"
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid var(--border-color)',
+                    }}
+                  />
+                  {selectedImage && (
+                    <p style={{ marginTop: '0.5rem' }}>{selectedImage.name}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="form-actions">
-              <button type="submit" className="save-btn">Save</button>
-              <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">Cancel</button>
+              <button type="submit" className="save-btn">
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedImage(null);
+                  setPreviewImage(null);
+                }}
+                className="cancel-btn"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         ) : (
@@ -209,7 +278,10 @@ const handleFriendAction = async (action) => {
             ) : (
               <div className="friend-actions">
                 {isFriend ? (
-                  <button onClick={() => handleFriendAction('remove')} className="unfriend-btn">
+                  <button
+                    onClick={() => handleFriendAction('remove')}
+                    className="unfriend-btn"
+                  >
                     Remove Friend
                   </button>
                 ) : hasSentRequest ? (
@@ -217,7 +289,10 @@ const handleFriendAction = async (action) => {
                     Friend Request Sent
                   </button>
                 ) : (
-                  <button onClick={() => handleFriendAction('add')} className="friend-btn">
+                  <button
+                    onClick={() => handleFriendAction('add')}
+                    className="friend-btn"
+                  >
                     Add Friend
                   </button>
                 )}
@@ -228,12 +303,12 @@ const handleFriendAction = async (action) => {
       </div>
 
       <Profile data={profileData} />
-      
+
       <div className="profile-projects">
         <div className="projects-header">
           <h2>Projects ({userProjects.length})</h2>
           {isOwner && !isEditing && (
-            <button 
+            <button
               onClick={() => navigate('/home')}
               className="create-project-btn"
             >
@@ -241,6 +316,7 @@ const handleFriendAction = async (action) => {
             </button>
           )}
         </div>
+
         {userProjects.length > 0 ? (
           <ProjectList projects={userProjects} />
         ) : (

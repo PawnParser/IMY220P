@@ -36,14 +36,20 @@ export const apiService = {
     return await response.json();
   },
 
-  async updateProfile(profileData, token) {
+  async updateProfile(profileData, token, isFormData = false) {
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    // If it's FormData (file upload), let the browser set the Content-Type
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${API_BASE}/api/users/profile`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(profileData)
+      headers: headers,
+      body: isFormData ? profileData : JSON.stringify(profileData)
     });
     return await response.json();
   },

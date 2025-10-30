@@ -11,10 +11,27 @@ const path = require('path');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage(); // Store files in memory as Buffer
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 // MongoDB Connection - Use environment variable or fallback
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://u22857941:Sm9x38gRbDdL4hKt@imy220prac5.41pvu.mongodb.net/versioncontrol?retryWrites=true&w=majority';
@@ -378,14 +395,22 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/users/profile', authenticateToken, async (req, res) => {
+// Updated profile endpoint to handle file uploads
+app.put('/api/users/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
-    const { name, bio, avatar } = req.body;
-
+    const { name, bio } = req.body;
     const updateData = {};
+    
     if (name) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
-    if (avatar) updateData.avatar = avatar;
+
+    // Handle avatar upload
+    if (req.file) {
+      // Convert image buffer to base64
+      const base64Image = req.file.buffer.toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
+      updateData.avatar = dataURI;
+    }
 
     await db.collection('users').updateOne(
       { username: req.user.username },
@@ -397,7 +422,11 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
       { projection: { password: 0 } }
     );
 
-    res.json({ success: true, message: 'Profile updated', user: updatedUser });
+    res.json({ 
+      success: true, 
+      message: 'Profile updated', 
+      user: updatedUser 
+    });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -441,8 +470,6 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
-
 
 app.get('/api/users/:username', authenticateToken, async (req, res) => {
   try {
