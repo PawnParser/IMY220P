@@ -8,6 +8,8 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import ProjectPage from './pages/ProjectPage';
 import SearchPage from './pages/SearchPage';
+import MessagesPage from './pages/MessagesPage';
+import AdminPage from './pages/AdminPage';
 import Header from './components/Header';
 import './App.css';
 
@@ -15,6 +17,12 @@ import './App.css';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/" />;
+};
+
+// Admin Route component
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, currentUser } = useAuth();
+  return isAuthenticated && currentUser?.role === 'admin' ? children : <Navigate to="/home" />;
 };
 
 function App() {
@@ -51,6 +59,8 @@ function MainLayout() {
         <Route path="/profile/:id?" element={<ProfilePage />} />
         <Route path="/project/:id" element={<ProjectPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
     </>

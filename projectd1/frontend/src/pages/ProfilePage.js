@@ -25,6 +25,8 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('projects');
   const { currentUser } = useAuth();
 
+  const API_BASE = 'http://localhost:5000';
+
   useEffect(() => {
     loadProfileData();
   }, [id, currentUser]);
@@ -127,7 +129,7 @@ const ProfilePage = () => {
         // Load saved projects if viewing own profile
         if (isOwner) {
           try {
-            const savedResponse = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/users/saved-projects`, {
+            const savedResponse = await fetch(`${API_BASE}/api/users/saved-projects`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'

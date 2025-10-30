@@ -54,6 +54,10 @@ const Header = () => {
       <nav className="nav">
         <Link to="/home">Home</Link>
         <Link to={`/profile/${currentUser?.username}`}>Profile</Link>
+        <Link to="/messages">Messages</Link>
+        {currentUser?.role === 'admin' && (
+          <Link to="/admin">Admin</Link>
+        )}
       </nav>
 
       <div className="header-actions">
@@ -139,6 +143,9 @@ const Header = () => {
             }}
           />
           <span className="username">{currentUser?.username}</span>
+          {currentUser?.role === 'admin' && (
+            <span className="admin-badge">Admin</span>
+          )}
           <button className="btn btn-danger" onClick={handleLogout}>
             Logout
           </button>

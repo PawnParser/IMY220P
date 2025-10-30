@@ -18,14 +18,10 @@ const ProjectPage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState('');
-  const [showTransferOwnership, setShowTransferOwnership] = useState(false);
-  const [newOwner, setNewOwner] = useState('');
   const [isSaved, setIsSaved] = useState(false);
-  const [editingProject, setEditingProject] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [newFile, setNewFile] = useState({ name: '', path: '/', type: 'file', content: '' });
-  const [editingFile, setEditingFile] = useState(null);
   const { currentUser } = useAuth();
+
+  const API_BASE = 'http://localhost:5000';
 
   useEffect(() => {
     loadProjectData();
@@ -39,40 +35,34 @@ const ProjectPage = () => {
       const projectResponse = await apiService.getProject(id, token);
       if (projectResponse.success) {
         setProject(projectResponse.project);
-        setEditForm({
-          name: projectResponse.project.name,
-          description: projectResponse.project.description,
-          type: projectResponse.project.type,
-          hashtags: projectResponse.project.hashtags?.join(', ') || ''
-        });
         
         // Check if project is saved
         checkIfProjectIsSaved(projectResponse.project._id, token);
+        
+        // Load check-ins using project ID
+        try {
+          const checkinsResponse = await apiService.getProjectCheckins(projectResponse.project._id, token);
+          if (checkinsResponse.success) {
+            const formattedCheckins = checkinsResponse.checkins.map(checkin => ({
+              id: checkin._id,
+              user: checkin.userId || 'Unknown User',
+              project: projectResponse.project.name,
+              message: checkin.message || 'No message',
+              comment: checkin.comment || '',
+              time: checkin.createdAt ? new Date(checkin.createdAt).toLocaleString() : 'Just now'
+            }));
+            setCheckins(formattedCheckins);
+          } else {
+            setCheckins([]);
+          }
+        } catch (checkinError) {
+          console.error('Checkins error:', checkinError);
+          setCheckins([]);
+        }
       } else {
         console.error('Project not found:', projectResponse.message);
         navigate('/home');
         return;
-      }
-
-      // Load check-ins
-      try {
-        const checkinsResponse = await apiService.getProjectCheckins(id, token);
-        if (checkinsResponse.success) {
-          const formattedCheckins = checkinsResponse.checkins.map(checkin => ({
-            id: checkin._id,
-            user: checkin.userId || 'Unknown User',
-            project: projectResponse.project.name,
-            message: checkin.message || 'No message',
-            comment: checkin.comment || '',
-            time: checkin.createdAt ? new Date(checkin.createdAt).toLocaleString() : 'Just now'
-          }));
-          setCheckins(formattedCheckins);
-        } else {
-          setCheckins([]);
-        }
-      } catch (checkinError) {
-        console.error('Checkins error:', checkinError);
-        setCheckins([]);
       }
     } catch (error) {
       console.error('Error loading project:', error);
@@ -100,7 +90,7 @@ const ProjectPage = () => {
   const handleSaveProject = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/save`, {
+      const response = await fetch(`${API_BASE}/api/projects/${project._id}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -125,7 +115,7 @@ const ProjectPage = () => {
   const handleUnsaveProject = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/unsave`, {
+      const response = await fetch(`${API_BASE}/api/projects/${project._id}/unsave`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -181,7 +171,7 @@ const ProjectPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/members`, {
+      const response = await fetch(`${API_BASE}/api/projects/${project._id}/members`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -213,7 +203,7 @@ const ProjectPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/members/${username}`, {
+      const response = await fetch(`${API_BASE}/api/projects/${project._id}/members/${username}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -235,168 +225,48 @@ const ProjectPage = () => {
     }
   };
 
-  const handleTransferOwnership = async (e) => {
-    e.preventDefault();
-    if (!newOwner.trim()) {
-      alert('Please select a new owner');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/transfer-ownership`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ newOwner })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setNewOwner('');
-        setShowTransferOwnership(false);
-        loadProjectData();
-        alert('Ownership transferred successfully!');
-      } else {
-        alert('Failed to transfer ownership: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error transferring ownership:', error);
-      alert('Failed to transfer ownership: ' + error.message);
-    }
-  };
-
-  const handleUpdateProject = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const projectData = {
-        ...editForm,
-        hashtags: editForm.hashtags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      };
-
-      const response = await apiService.updateProject(project._id, projectData, token);
-      
-      if (response.success) {
-        setEditingProject(false);
-        loadProjectData();
-        alert('Project updated successfully!');
-      } else {
-        alert('Failed to update project: ' + response.message);
-      }
-    } catch (error) {
-      console.error('Error updating project:', error);
-      alert('Failed to update project: ' + error.message);
-    }
-  };
-
-  const handleAddFile = async (e) => {
-    e.preventDefault();
-    if (!newFile.name.trim()) {
-      alert('Please enter a file name');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/files`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ file: newFile })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setNewFile({ name: '', path: '/', type: 'file', content: '' });
-        loadProjectData();
-        alert('File added successfully!');
-      } else {
-        alert('Failed to add file: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error adding file:', error);
-      alert('Failed to add file: ' + error.message);
-    }
-  };
-
-  const handleUpdateFile = async (filename, content) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/files/${filename}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setEditingFile(null);
-        loadProjectData();
-        alert('File updated successfully!');
-      } else {
-        alert('Failed to update file: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error updating file:', error);
-      alert('Failed to update file: ' + error.message);
-    }
-  };
-
-  const handleDeleteFile = async (filename) => {
-    if (!confirm(`Are you sure you want to delete ${filename}?`)) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/files/${filename}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        loadProjectData();
-        alert('File deleted successfully!');
-      } else {
-        alert('Failed to delete file: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      alert('Failed to delete file: ' + error.message);
-    }
-  };
-
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (project.files && project.files.length > 0) {
-      const fileContents = project.files.map(file => 
-        `${file.type === 'folder' ? '📁' : '📄'} ${file.path}/${file.name}${file.content ? `\n${file.content}` : ''}`
-      ).join('\n\n');
-      
-      const blob = new Blob([fileContents], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${project.name}_files.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      try {
+        // Try to use JSZip for creating a zip file
+        const JSZip = (await import('jszip')).default;
+        const zip = new JSZip();
+        
+        // Add files to zip
+        project.files.forEach(file => {
+          if (file.type === 'file' && file.content) {
+            const filePath = file.path ? `${file.path}/${file.name}` : file.name;
+            zip.file(filePath, file.content);
+          }
+        });
+        
+        // Generate and download zip
+        const content = await zip.generateAsync({type: 'blob'});
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name}_files.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error creating zip:', error);
+        // Fallback to text file if JSZip fails
+        const fileContents = project.files.map(file => 
+          `${file.type === 'folder' ? '📁' : '📄'} ${file.path}/${file.name}\n${file.content || 'No content available'}\n`
+        ).join('\n\n');
+        
+        const blob = new Blob([fileContents], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name}_files.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     } else {
       alert('No files to download');
     }
@@ -419,31 +289,6 @@ const ProjectPage = () => {
     }
   };
 
-  const handleCheckout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/checkout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        loadProjectData();
-        alert('Project checked out successfully!');
-      } else {
-        alert('Failed to checkout project: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error checking out project:', error);
-      alert('Failed to checkout project: ' + error.message);
-    }
-  };
-
   const isProjectOwner = project && currentUser && project.owner === currentUser.username;
   const isProjectMember = project && currentUser && (project.owner === currentUser.username || project.members.includes(currentUser.username));
 
@@ -458,58 +303,7 @@ const ProjectPage = () => {
   return (
     <div className="project-page">
       <div className="project-header-section">
-        {editingProject ? (
-          <form onSubmit={handleUpdateProject} className="edit-project-form">
-            <div className="form-group">
-              <label>Project Name:</label>
-              <input
-                type="text"
-                value={editForm.name}
-                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Description:</label>
-              <textarea
-                value={editForm.description}
-                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                rows="3"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Type:</label>
-              <select
-                value={editForm.type}
-                onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
-              >
-                <option value="web">Web Application</option>
-                <option value="mobile">Mobile Application</option>
-                <option value="desktop">Desktop Application</option>
-                <option value="library">Library/Package</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Hashtags (comma separated):</label>
-              <input
-                type="text"
-                value={editForm.hashtags}
-                onChange={(e) => setEditForm(prev => ({ ...prev, hashtags: e.target.value }))}
-                placeholder="react, nodejs, mongodb"
-              />
-            </div>
-            <div className="form-actions">
-              <button type="submit" className="save-btn">Save Changes</button>
-              <button type="button" onClick={() => setEditingProject(false)} className="cancel-btn">
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <Project data={project} />
-        )}
+        <Project data={project} />
         
         <div className="project-actions">
           <div className="project-status">
@@ -518,40 +312,30 @@ const ProjectPage = () => {
             </span>
           </div>
 
-          {!isProjectOwner && !isSaved && (
-            <button onClick={handleSaveProject} className="save-project-btn">
-              Save Project
-            </button>
-          )}
+          <div className="action-buttons">
+            {!isProjectOwner && !isSaved && (
+              <button onClick={handleSaveProject} className="save-project-btn">
+                Save Project
+              </button>
+            )}
 
-          {!isProjectOwner && isSaved && (
-            <button onClick={handleUnsaveProject} className="unsave-project-btn">
-              Unsave Project
-            </button>
-          )}
+            {!isProjectOwner && isSaved && (
+              <button onClick={handleUnsaveProject} className="unsave-project-btn">
+                Unsave Project
+              </button>
+            )}
 
-          {isProjectMember && project.status === 'checked-in' && (
-            <button onClick={handleCheckout} className="checkout-btn">
-              Check Out
-            </button>
-          )}
-
-          {isProjectOwner && (
-            <>
-              <button onClick={() => setEditingProject(!editingProject)} className="edit-project-btn">
-                {editingProject ? 'Cancel Edit' : 'Edit Project'}
-              </button>
-              <button onClick={() => setShowAddMember(true)} className="add-member-btn">
-                Add Member
-              </button>
-              <button onClick={() => setShowTransferOwnership(true)} className="transfer-ownership-btn">
-                Transfer Ownership
-              </button>
-              <button onClick={() => setShowDeleteConfirm(true)} className="delete-project-btn">
-                Delete Project
-              </button>
-            </>
-          )}
+            {isProjectOwner && (
+              <>
+                <button onClick={() => setShowAddMember(true)} className="add-member-btn">
+                  Add Member
+                </button>
+                <button onClick={() => setShowDeleteConfirm(true)} className="delete-project-btn">
+                  Delete Project
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       
@@ -625,97 +409,11 @@ const ProjectPage = () => {
           <div className="tab-content">
             <div className="files-header">
               <h3>Project Files</h3>
-              <div className="file-actions">
-                <button onClick={handleDownload} className="download-btn">
-                  Download All
-                </button>
-                {isProjectMember && (
-                  <button onClick={() => setActiveTab('add-file')} className="add-file-btn">
-                    Add File
-                  </button>
-                )}
-              </div>
+              <button onClick={handleDownload} className="download-btn">
+                Download All
+              </button>
             </div>
-            <Files 
-              files={project.files || []} 
-              onEditFile={setEditingFile}
-              onDeleteFile={isProjectMember ? handleDeleteFile : null}
-            />
-            
-            {editingFile && (
-              <div className="file-editor">
-                <h4>Editing: {editingFile.name}</h4>
-                <textarea
-                  value={editingFile.content || ''}
-                  onChange={(e) => setEditingFile(prev => ({ ...prev, content: e.target.value }))}
-                  rows="10"
-                  style={{ width: '100%', fontFamily: 'monospace' }}
-                />
-                <div className="editor-actions">
-                  <button onClick={() => handleUpdateFile(editingFile.name, editingFile.content)} className="save-btn">
-                    Save Changes
-                  </button>
-                  <button onClick={() => setEditingFile(null)} className="cancel-btn">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'add-file' && isProjectMember && (
-          <div className="tab-content">
-            <form onSubmit={handleAddFile} className="add-file-form">
-              <h3>Add New File</h3>
-              <div className="form-group">
-                <label>File Name:</label>
-                <input
-                  type="text"
-                  value={newFile.name}
-                  onChange={(e) => setNewFile(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="example.js"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Path:</label>
-                <input
-                  type="text"
-                  value={newFile.path}
-                  onChange={(e) => setNewFile(prev => ({ ...prev, path: e.target.value }))}
-                  placeholder="/src"
-                />
-              </div>
-              <div className="form-group">
-                <label>Type:</label>
-                <select
-                  value={newFile.type}
-                  onChange={(e) => setNewFile(prev => ({ ...prev, type: e.target.value }))}
-                >
-                  <option value="file">File</option>
-                  <option value="folder">Folder</option>
-                </select>
-              </div>
-              {newFile.type === 'file' && (
-                <div className="form-group">
-                  <label>Content:</label>
-                  <textarea
-                    value={newFile.content}
-                    onChange={(e) => setNewFile(prev => ({ ...prev, content: e.target.value }))}
-                    rows="10"
-                    placeholder="File content..."
-                    style={{ fontFamily: 'monospace' }}
-                  />
-                </div>
-              )}
-              <div className="form-actions">
-                <button type="submit" className="save-btn">Add File</button>
-                <button type="button" onClick={() => setActiveTab('files')} className="cancel-btn">
-                  Cancel
-                </button>
-              </div>
-            </form>
+            <Files files={project.files || []} />
           </div>
         )}
 
@@ -819,38 +517,6 @@ const ProjectPage = () => {
               <div className="modal-actions">
                 <button type="submit" className="save-btn">Add Member</button>
                 <button type="button" onClick={() => setShowAddMember(false)} className="cancel-btn">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showTransferOwnership && (
-        <div className="modal-overlay">
-          <div className="modal-content card">
-            <div className="modal-header">
-              <h3>Transfer Ownership</h3>
-              <button onClick={() => setShowTransferOwnership(false)} className="close-btn">×</button>
-            </div>
-            <form onSubmit={handleTransferOwnership}>
-              <div className="form-group">
-                <label>New Owner:</label>
-                <select
-                  value={newOwner}
-                  onChange={(e) => setNewOwner(e.target.value)}
-                  required
-                >
-                  <option value="">Select a member</option>
-                  {project.members.filter(member => member !== project.owner).map((member, index) => (
-                    <option key={index} value={member}>{member}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="modal-actions">
-                <button type="submit" className="save-btn">Transfer Ownership</button>
-                <button type="button" onClick={() => setShowTransferOwnership(false)} className="cancel-btn">
                   Cancel
                 </button>
               </div>

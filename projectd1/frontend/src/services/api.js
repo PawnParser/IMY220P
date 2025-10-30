@@ -278,5 +278,149 @@ export const apiService = {
       }
     });
     return await response.json();
+  },
+
+  // Saved Projects
+  async getSavedProjects(token) {
+    const response = await fetch(`${API_BASE}/api/users/saved-projects`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  // Messaging
+  async getConversations(token) {
+    const response = await fetch(`${API_BASE}/api/messages/conversations`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async getMessages(friendUsername, token) {
+    const response = await fetch(`${API_BASE}/api/messages/${friendUsername}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async sendMessage(friendUsername, content, token) {
+    const response = await fetch(`${API_BASE}/api/messages/${friendUsername}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content })
+    });
+    return await response.json();
+  },
+
+  // Admin Routes
+  async getAdminUsers(token) {
+    const response = await fetch(`${API_BASE}/api/admin/users`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async updateAdminUser(username, userData, token) {
+    const response = await fetch(`${API_BASE}/api/admin/users/${username}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+    return await response.json();
+  },
+
+  async deleteAdminUser(username, token) {
+    const response = await fetch(`${API_BASE}/api/admin/users/${username}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async getAdminProjects(token) {
+    const response = await fetch(`${API_BASE}/api/admin/projects`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async updateAdminProject(projectId, projectData, token) {
+    const response = await fetch(`${API_BASE}/api/admin/projects/${projectId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(projectData)
+    });
+    return await response.json();
+  },
+
+  async deleteAdminProject(projectId, token) {
+    const response = await fetch(`${API_BASE}/api/admin/projects/${projectId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async getAdminCheckins(token) {
+    const response = await fetch(`${API_BASE}/api/admin/checkins`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async updateAdminCheckin(checkinId, checkinData, token) {
+    const response = await fetch(`${API_BASE}/api/admin/checkins/${checkinId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(checkinData)
+    });
+    return await response.json();
+  },
+
+  async deleteAdminCheckin(checkinId, token) {
+    const response = await fetch(`${API_BASE}/api/admin/checkins/${checkinId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
   }
 };

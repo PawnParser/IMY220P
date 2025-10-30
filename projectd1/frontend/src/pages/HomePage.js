@@ -41,18 +41,14 @@ const HomePage = () => {
         setProjects(userProjects);
       }
 
-      // Load saved projects from API
+      // Load saved projects from API using the correct service method
       try {
-        const savedResponse = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/users/saved-projects`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const savedData = await savedResponse.json();
-        if (savedData.success) {
-          setSavedProjects(savedData.projects || []);
+        const savedResponse = await apiService.getSavedProjects(token);
+        if (savedResponse.success) {
+          setSavedProjects(savedResponse.projects || []);
+        } else {
+          console.log('Saved projects response not successful:', savedResponse.message);
+          setSavedProjects([]);
         }
       } catch (savedError) {
         console.log('Saved projects not available:', savedError.message);
