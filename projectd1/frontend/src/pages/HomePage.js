@@ -83,23 +83,20 @@ const HomePage = () => {
 
       // Load friends with actual data
       try {
-        const profileResponse = await apiService.getProfile(token);
-        if (profileResponse.success && profileResponse.user.friends) {
-          const friendsResponse = await apiService.getUserFriends(currentUser.username, token);
-          if (friendsResponse.success) {
-            const friendList = friendsResponse.friends.map((friend, index) => ({
-              id: friend._id || index,
-              username: friend.username,
-              name: friend.name,
-              avatar: friend.avatar,
-              online: Math.random() > 0.5
-            }));
-            
-            setFriends({
-              online: friendList.filter(f => f.online),
-              offline: friendList.filter(f => !f.online)
-            });
-          }
+        const friendsResponse = await apiService.getUserFriends(currentUser.username, token);
+        if (friendsResponse.success) {
+          const friendList = friendsResponse.friends.map((friend, index) => ({
+            id: friend._id || index,
+            username: friend.username,
+            name: friend.name,
+            avatar: friend.avatar,
+            online: Math.random() > 0.5
+          }));
+          
+          setFriends({
+            online: friendList.filter(f => f.online),
+            offline: friendList.filter(f => !f.online)
+          });
         }
       } catch (friendError) {
         console.log('Friends not available');

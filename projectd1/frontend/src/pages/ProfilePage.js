@@ -12,7 +12,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [userProjects, setUserProjects] = useState([]);
-  const [userFriends, setUserFriends] = useState([]);
+  const [userFriends, setUserFriends] = useState({ online: [], offline: [] });
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
@@ -123,31 +123,29 @@ const ProfilePage = () => {
           setUserProjects([]);
         }
 
-        // Load friends if viewing own profile
-        if (isOwner) {
-          try {
-            const friendsResponse = await apiService.getUserFriends(targetUsername, token);
-            if (friendsResponse.success) {
-              const friends = friendsResponse.friends || [];
-              console.log(`Found ${friends.length} friends for ${targetUsername}`);
-              
-              // Format friends for FriendList component
-              const formattedFriends = {
-                online: friends.map(friend => ({
-                  id: friend._id,
-                  username: friend.username,
-                  name: friend.name,
-                  avatar: friend.avatar,
-                  online: Math.random() > 0.5
-                })),
-                offline: []
-              };
-              setUserFriends(formattedFriends);
-            }
-          } catch (friendError) {
-            console.error('Error loading friends:', friendError);
-            setUserFriends({ online: [], offline: [] });
+        // Load friends for ANY profile (not just own)
+        try {
+          const friendsResponse = await apiService.getUserFriends(targetUsername, token);
+          if (friendsResponse.success) {
+            const friends = friendsResponse.friends || [];
+            console.log(`Found ${friends.length} friends for ${targetUsername}`);
+            
+            // Format friends for FriendList component with online/offline status
+            const formattedFriends = {
+              online: friends.map(friend => ({
+                id: friend._id || friend.username,
+                username: friend.username,
+                name: friend.name,
+                avatar: friend.avatar,
+                online: Math.random() > 0.5 // Random online status for demo
+              })),
+              offline: [] // All friends are in online array for simplicity
+            };
+            setUserFriends(formattedFriends);
           }
+        } catch (friendError) {
+          console.error('Error loading friends:', friendError);
+          setUserFriends({ online: [], offline: [] });
         }
       } else {
         console.error('User data not found');
@@ -287,6 +285,7 @@ const ProfilePage = () => {
                   <img
                     src={previewImage || profileData.avatar}
                     alt="Preview"
+                    style={{ maxWidth: '200px', maxHeight: '200px' }}
                   />
                   {selectedImage && <p>{selectedImage.name}</p>}
                 </div>
@@ -343,7 +342,7 @@ const ProfilePage = () => {
 
       <Profile data={profileData} />
 
-      {/* Tabs - Always show Projects, only show Friends for own profile */}
+      {/* Tabs - Show Projects for everyone, Friends for own profile and friends */}
       <div className="profile-tabs">
         <button 
           className={activeTab === 'projects' ? 'active' : ''}
@@ -351,7 +350,7 @@ const ProfilePage = () => {
         >
           Projects ({userProjects.length})
         </button>
-        {isOwner && (
+        {(isOwner || isFriend) && (
           <button 
             className={activeTab === 'friends' ? 'active' : ''}
             onClick={() => setActiveTab('friends')}
@@ -395,19 +394,21 @@ const ProfilePage = () => {
           </div>
         )}
 
-        {/* ONLY show friends when viewing own profile */}
-        {activeTab === 'friends' && isOwner && (
+        {/* Show friends when viewing own profile OR when viewing a friend's profile */}
+        {activeTab === 'friends' && (isOwner || isFriend) && (
           <div className="profile-friends">
             <div className="friends-header">
-              <h2>Your Friends</h2>
+              <h2>{isOwner ? 'Your Friends' : `${profileData.name}'s Friends`}</h2>
               <span className="count-badge">{profileData.friends}</span>
             </div>
             {userFriends.online && userFriends.online.length > 0 ? (
               <FriendList friends={userFriends} />
             ) : (
               <div className="no-data">
-                <p>You don't have any friends yet.</p>
-                <p>Search for users and send them friend requests!</p>
+                <p>{isOwner ? 'You don\'t have any friends yet.' : 'This user doesn\'t have any friends yet.'}</p>
+                {isOwner && (
+                  <p>Search for users and send them friend requests!</p>
+                )}
               </div>
             )}
           </div>
