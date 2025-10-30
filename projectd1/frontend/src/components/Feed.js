@@ -9,7 +9,14 @@ const Feed = ({ items }) => {
       {items.map(item => (
         <div key={item.id} className="feed-item">
           <div className="feed-header">
-            <img src={dpImage} alt={item.user} className="feed-avatar" />
+            <img 
+              src={item.userAvatar || dpImage} 
+              alt={item.user} 
+              className="feed-avatar" 
+              onError={(e) => {
+                e.target.src = dpImage;
+              }}
+            />
             <div className="feed-user-info">
               <span className="feed-username">{item.user}</span>
               <span className="project-name">in {item.project}</span>
@@ -17,7 +24,7 @@ const Feed = ({ items }) => {
           </div>
           <div className="feed-content">
             <p className="feed-message">{item.message}</p>
-            <p className="feed-comment">{item.comment}</p>
+            {item.comment && <p className="feed-comment">{item.comment}</p>}
           </div>
           <div className="feed-footer">
             <span className="feed-time">{item.time}</span>

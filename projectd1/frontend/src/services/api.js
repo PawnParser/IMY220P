@@ -41,7 +41,6 @@ export const apiService = {
       'Authorization': `Bearer ${token}`
     };
 
-    // If it's FormData (file upload), let the browser set the Content-Type
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -56,6 +55,16 @@ export const apiService = {
 
   async getUser(username, token) {
     const response = await fetch(`${API_BASE}/api/users/${username}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  },
+
+  async getUserFriends(username, token) {
+    const response = await fetch(`${API_BASE}/api/users/${username}/friends`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

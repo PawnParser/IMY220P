@@ -4,6 +4,14 @@ import ProjectPreview from './ProjectPreview';
 import './ProjectList.css';
 
 const ProjectList = ({ projects }) => {
+  if (!projects || projects.length === 0) {
+    return (
+      <div className="no-projects">
+        <p>No projects found.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="project-list">
       {projects.map(project => (

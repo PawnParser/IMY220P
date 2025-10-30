@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import Profile from '../components/Profile';
 import ProjectList from '../components/ProjectList';
+import FriendList from '../components/FriendList';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -11,6 +12,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [userProjects, setUserProjects] = useState([]);
+  const [userFriends, setUserFriends] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
@@ -19,51 +21,79 @@ const ProfilePage = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
   const [hasSentRequest, setHasSentRequest] = useState(false);
-  const { currentUser, refreshUser } = useAuth();
+  const [activeTab, setActiveTab] = useState('projects');
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     loadProfileData();
-  }, [id]);
+  }, [id, currentUser]);
 
   const loadProfileData = async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       
+      if (!currentUser) {
+        console.error('No current user found');
+        navigate('/home');
+        return;
+      }
+
       let userData;
       let targetUsername = id;
 
-      if (!targetUsername || targetUsername === 'me') {
+      console.log('Loading profile for:', { id, currentUser: currentUser.username });
+
+      // Determine if we're viewing own profile or someone else's
+      if (!targetUsername || targetUsername === 'me' || targetUsername === currentUser.username) {
+        // Viewing own profile
+        console.log('Viewing own profile');
         const response = await apiService.getProfile(token);
         if (response.success) {
           userData = response.user;
           setIsOwner(true);
+          setIsFriend(false);
+          setHasSentRequest(false);
           targetUsername = userData.username;
         }
       } else {
+        // Viewing someone else's profile
+        console.log('Viewing other profile:', targetUsername);
         const response = await apiService.getUser(targetUsername, token);
         if (response.success) {
           userData = response.user;
-          const isCurrentUser = currentUser?.username === targetUsername;
-          setIsOwner(isCurrentUser);
-
-          if (!isCurrentUser && currentUser) {
-            const currentUserResponse = await apiService.getProfile(token);
-            if (currentUserResponse.success) {
-              const currentUserFriends = currentUserResponse.user.friends || [];
-              setIsFriend(currentUserFriends.includes(targetUsername));
-
+          setIsOwner(false);
+          
+          // Check friendship status
+          const currentUserResponse = await apiService.getProfile(token);
+          if (currentUserResponse.success) {
+            const currentUserFriends = currentUserResponse.user.friends || [];
+            const friendshipStatus = currentUserFriends.includes(targetUsername);
+            console.log('Friendship status:', friendshipStatus);
+            setIsFriend(friendshipStatus);
+            
+            // Check if request was sent (only check if not friends)
+            if (!friendshipStatus) {
               const targetUserResponse = await apiService.getUser(targetUsername, token);
               if (targetUserResponse.success) {
                 const targetUserFriendRequests = targetUserResponse.user.friendRequests || [];
-                setHasSentRequest(targetUserFriendRequests.includes(currentUser.username));
+                const requestStatus = targetUserFriendRequests.includes(currentUser.username);
+                console.log('Request status:', requestStatus);
+                setHasSentRequest(requestStatus);
               }
+            } else {
+              setHasSentRequest(false);
             }
           }
+        } else {
+          console.error('User not found:', targetUsername);
+          navigate('/home');
+          return;
         }
       }
 
       if (userData) {
+        console.log('Setting profile data for:', userData.username);
         setProfileData({
           name: userData.name,
           bio: userData.bio,
@@ -80,19 +110,39 @@ const ProfilePage = () => {
           bio: userData.bio || ''
         });
 
+        // ALWAYS load projects for the target user
         const projectsResponse = await apiService.getProjects(token);
         if (projectsResponse.success) {
           const userProjects = projectsResponse.projects.filter(
             project => project.owner === targetUsername
           );
+          console.log('Found projects:', userProjects.length, 'for user:', targetUsername);
           setUserProjects(userProjects);
           setProfileData(prev => ({
             ...prev,
             projects: userProjects.length
           }));
         }
+
+        // ONLY load friends if viewing own profile
+        if (isOwner) {
+          const friendsResponse = await apiService.getUserFriends(targetUsername, token);
+          if (friendsResponse.success) {
+            const formattedFriends = {
+              online: friendsResponse.friends.map(friend => ({
+                id: friend._id,
+                username: friend.username,
+                name: friend.name,
+                avatar: friend.avatar,
+                online: Math.random() > 0.5
+              })),
+              offline: []
+            };
+            setUserFriends(formattedFriends);
+          }
+        }
       } else {
-        console.error('User not found');
+        console.error('User data not found');
         navigate('/home');
       }
     } catch (error) {
@@ -126,21 +176,14 @@ const ProfilePage = () => {
           avatar: response.user?.avatar || previewImage || profileData.avatar
         }));
 
-        if (refreshUser) {
-          await refreshUser();
-        }
-
         setIsEditing(false);
         setSelectedImage(null);
         setPreviewImage(null);
-
         loadProfileData();
       } else {
-        console.error('Update failed:', response);
         alert('Failed to update profile: ' + response.message);
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
       alert('Error updating profile: ' + error.message);
     }
   };
@@ -148,23 +191,34 @@ const ProfilePage = () => {
   const handleFriendAction = async (action) => {
     try {
       const token = localStorage.getItem('token');
+      
+      // Get the actual target username from the URL parameter
+      const targetUsername = id;
+      
+      console.log('Friend action:', action, 'on user:', targetUsername, 'current user:', currentUser.username);
+      
+      if (targetUsername === currentUser.username) {
+        alert('You cannot friend yourself.');
+        return;
+      }
+
       let response;
 
       if (action === 'add') {
-        response = await apiService.sendFriendRequest(id, token);
+        response = await apiService.sendFriendRequest(targetUsername, token);
         if (response && response.success) {
           setHasSentRequest(true);
           alert('Friend request sent!');
         }
       } else if (action === 'remove') {
-        response = await apiService.removeFriend(id, token);
+        response = await apiService.removeFriend(targetUsername, token);
         if (response && response.success) {
           setIsFriend(false);
           setHasSentRequest(false);
           alert('Friend removed');
         }
       }
-      loadProfileData();
+      loadProfileData(); // Reload to update status
     } catch (error) {
       console.error('Friend action error:', error);
       if (error.message && error.message.includes('Cannot friend yourself')) {
@@ -233,29 +287,18 @@ const ProfilePage = () => {
               />
 
               {(previewImage || profileData?.avatar) && (
-                <div className="image-preview" style={{ marginTop: '1rem' }}>
+                <div className="image-preview">
                   <img
                     src={previewImage || profileData.avatar}
                     alt="Preview"
-                    style={{
-                      width: '120px',
-                      height: '120px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '2px solid var(--border-color)',
-                    }}
                   />
-                  {selectedImage && (
-                    <p style={{ marginTop: '0.5rem' }}>{selectedImage.name}</p>
-                  )}
+                  {selectedImage && <p>{selectedImage.name}</p>}
                 </div>
               )}
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="save-btn">
-                Save
-              </button>
+              <button type="submit" className="save-btn">Save</button>
               <button
                 type="button"
                 onClick={() => {
@@ -304,24 +347,73 @@ const ProfilePage = () => {
 
       <Profile data={profileData} />
 
-      <div className="profile-projects">
-        <div className="projects-header">
-          <h2>Projects ({userProjects.length})</h2>
-          {isOwner && !isEditing && (
-            <button
-              onClick={() => navigate('/home')}
-              className="create-project-btn"
-            >
-              Create a project
-            </button>
-          )}
-        </div>
+      {/* Tabs - Always show Projects, only show Friends for own profile */}
+      <div className="profile-tabs">
+        <button 
+          className={activeTab === 'projects' ? 'active' : ''}
+          onClick={() => setActiveTab('projects')}
+        >
+          Projects ({userProjects.length})
+        </button>
+        {isOwner && (
+          <button 
+            className={activeTab === 'friends' ? 'active' : ''}
+            onClick={() => setActiveTab('friends')}
+          >
+            Friends ({profileData.friends})
+          </button>
+        )}
+      </div>
 
-        {userProjects.length > 0 ? (
-          <ProjectList projects={userProjects} />
-        ) : (
-          <div className="no-data">
-            <p>No projects yet.</p>
+      <div className="profile-content">
+        {/* ALWAYS show projects for any profile */}
+        {activeTab === 'projects' && (
+          <div className="profile-projects">
+            <div className="projects-header">
+              <h2>{isOwner ? 'Your Projects' : `${profileData.name}'s Projects`}</h2>
+              {isOwner && (
+                <button
+                  onClick={() => navigate('/home')}
+                  className="create-project-btn"
+                >
+                  Create a project
+                </button>
+              )}
+            </div>
+
+            {userProjects.length > 0 ? (
+              <ProjectList projects={userProjects} />
+            ) : (
+              <div className="no-data">
+                <p>{isOwner ? 'You have no projects yet.' : 'This user has no projects yet.'}</p>
+                {isOwner && (
+                  <button 
+                    onClick={() => navigate('/home')}
+                    className="create-project-btn-small"
+                  >
+                    Create your first project
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ONLY show friends when viewing own profile */}
+        {activeTab === 'friends' && isOwner && (
+          <div className="profile-friends">
+            <div className="friends-header">
+              <h2>Your Friends</h2>
+              <span className="count-badge">{profileData.friends}</span>
+            </div>
+            {userFriends.online && userFriends.online.length > 0 ? (
+              <FriendList friends={userFriends} />
+            ) : (
+              <div className="no-data">
+                <p>You don't have any friends yet.</p>
+                <p>Search for users and send them friend requests!</p>
+              </div>
+            )}
           </div>
         )}
       </div>

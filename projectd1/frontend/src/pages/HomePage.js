@@ -28,7 +28,7 @@ const HomePage = () => {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       
-      // Load projects first
+      // Load projects
       const projectsResponse = await apiService.getProjects(token);
       if (projectsResponse.success) {
         console.log('Loaded projects:', projectsResponse.projects);
@@ -60,6 +60,7 @@ const HomePage = () => {
           const formattedActivities = activityResponse.activities.map(activity => ({
             id: activity._id,
             user: activity.user && activity.user[0] ? activity.user[0].name : activity.userId,
+            userAvatar: activity.user && activity.user[0] ? activity.user[0].avatar : null,
             project: activity.project && activity.project[0] ? activity.project[0].name : 'Unknown Project',
             message: activity.message,
             comment: activity.comment,
@@ -73,6 +74,7 @@ const HomePage = () => {
           {
             id: 1,
             user: 'john_doe',
+            userAvatar: null,
             project: 'E-commerce Website',
             message: 'Implemented user authentication',
             comment: 'Added JWT-based authentication system',
@@ -81,26 +83,32 @@ const HomePage = () => {
         ]);
       }
 
-      // Load friends
+      // Load friends with actual data
       try {
         const profileResponse = await apiService.getProfile(token);
         if (profileResponse.success && profileResponse.user.friends) {
-          const friendList = profileResponse.user.friends.map((friend, index) => ({
-            id: index,
-            name: friend,
-            online: Math.random() > 0.5
-          }));
-          
-          setFriends({
-            online: friendList.filter(f => f.online),
-            offline: friendList.filter(f => !f.online)
-          });
+          // Get friend details
+          const friendsResponse = await apiService.getUserFriends(currentUser.username, token);
+          if (friendsResponse.success) {
+            const friendList = friendsResponse.friends.map((friend, index) => ({
+              id: friend._id || index,
+              username: friend.username,
+              name: friend.name,
+              avatar: friend.avatar,
+              online: Math.random() > 0.5 // Simulate online status
+            }));
+            
+            setFriends({
+              online: friendList.filter(f => f.online),
+              offline: friendList.filter(f => !f.online)
+            });
+          }
         }
       } catch (friendError) {
         console.log('Friends not available, using sample data');
         setFriends({
-          online: [{ id: 1, name: 'jane_smith', online: true }],
-          offline: [{ id: 2, name: 'john_doe', online: false }]
+          online: [{ id: 1, username: 'jane_smith', name: 'Jane Smith', avatar: null, online: true }],
+          offline: [{ id: 2, username: 'john_doe', name: 'John Doe', avatar: null, online: false }]
         });
       }
 
@@ -160,7 +168,7 @@ const HomePage = () => {
                 className={activeFeed === 'local' ? 'active' : ''}
                 onClick={() => setActiveFeed('local')}
               >
-                Local
+                Friends
               </button>
               <button 
                 className={activeFeed === 'global' ? 'active' : ''}
@@ -214,6 +222,7 @@ const HomePage = () => {
           <div className="sidebar-section card">
             <div className="section-header">
               <h3>Friends</h3>
+              <span className="count-badge">{friends.online.length + friends.offline.length}</span>
             </div>
             <FriendList friends={friends} />
           </div>

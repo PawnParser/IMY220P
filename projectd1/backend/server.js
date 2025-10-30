@@ -46,15 +46,14 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-// In your server.js, replace the connectToDatabase function:
 async function connectToDatabase() {
   try {
     console.log('🔌 Attempting to connect to MongoDB...');
-    console.log('Connection string:', MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Hide password
+    console.log('Connection string:', MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@'));
 
     const client = new MongoClient(MONGODB_URI, {
-      serverSelectionTimeoutMS: 10000, // 10 second timeout
-      connectTimeoutMS: 15000, // 15 second connection timeout
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 15000,
       maxPoolSize: 10,
     });
 
@@ -62,15 +61,12 @@ async function connectToDatabase() {
     db = client.db();
     console.log('✅ Connected to MongoDB successfully!');
 
-    // Test the connection
     await db.command({ ping: 1 });
     console.log('✅ MongoDB ping successful');
 
-    // Check existing collections
     const collections = await db.listCollections().toArray();
     console.log('📁 Existing collections:', collections.map(c => c.name));
 
-    // Create indexes if they don't exist
     try {
       await db.collection('users').createIndex({ username: 1 }, { unique: true });
       await db.collection('users').createIndex({ email: 1 }, { unique: true });
@@ -81,29 +77,21 @@ async function connectToDatabase() {
       console.log('ℹ️  Indexes may already exist:', indexError.message);
     }
 
-    // Initialize sample data
     await initializeSampleData();
 
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error);
-    console.log('💡 Tips:');
-    console.log('1. Check your MongoDB Atlas connection string');
-    console.log('2. Make sure your IP is whitelisted in Atlas');
-    console.log('3. Check if your password has special characters that need URL encoding');
-    console.log('4. Verify your cluster is running in Atlas');
-
-    // Don't exit the process, just log the error
     db = null;
   }
 }
 
-// Initialize sample data
+// Initialize sample data with more users
 async function initializeSampleData() {
   const usersCount = await db.collection('users').countDocuments();
   if (usersCount === 0) {
-    // Create sample users
     const hashedPassword = await bcrypt.hash('password123', 10);
 
+    // Create 12 sample users
     const users = [
       {
         username: 'john_doe',
@@ -112,7 +100,7 @@ async function initializeSampleData() {
         name: 'John Doe',
         bio: 'Full-stack developer passionate about open source',
         avatar: '/assets/images/dp.jpg',
-        friends: [],
+        friends: ['jane_smith', 'mike_chen', 'sarah_wilson'],
         friendRequests: [],
         createdAt: new Date()
       },
@@ -122,6 +110,116 @@ async function initializeSampleData() {
         password: hashedPassword,
         name: 'Jane Smith',
         bio: 'Frontend developer and UI/UX enthusiast',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['john_doe', 'alex_kumar'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'mike_chen',
+        email: 'mike@example.com',
+        password: hashedPassword,
+        name: 'Mike Chen',
+        bio: 'Backend developer specializing in Node.js',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['john_doe', 'lisa_rodriguez'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'sarah_wilson',
+        email: 'sarah@example.com',
+        password: hashedPassword,
+        name: 'Sarah Wilson',
+        bio: 'Mobile app developer',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['john_doe', 'david_brown'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'alex_kumar',
+        email: 'alex@example.com',
+        password: hashedPassword,
+        name: 'Alex Kumar',
+        bio: 'DevOps engineer and cloud specialist',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['jane_smith'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'lisa_rodriguez',
+        email: 'lisa@example.com',
+        password: hashedPassword,
+        name: 'Lisa Rodriguez',
+        bio: 'Full-stack JavaScript developer',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['mike_chen'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'david_brown',
+        email: 'david@example.com',
+        password: hashedPassword,
+        name: 'David Brown',
+        bio: 'Python developer and data scientist',
+        avatar: '/assets/images/dp.jpg',
+        friends: ['sarah_wilson'],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'emma_johnson',
+        email: 'emma@example.com',
+        password: hashedPassword,
+        name: 'Emma Johnson',
+        bio: 'React specialist and open source contributor',
+        avatar: '/assets/images/dp.jpg',
+        friends: [],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'ryan_lee',
+        email: 'ryan@example.com',
+        password: hashedPassword,
+        name: 'Ryan Lee',
+        bio: 'Java backend developer',
+        avatar: '/assets/images/dp.jpg',
+        friends: [],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'sophia_martinez',
+        email: 'sophia@example.com',
+        password: hashedPassword,
+        name: 'Sophia Martinez',
+        bio: 'UI/UX designer and frontend developer',
+        avatar: '/assets/images/dp.jpg',
+        friends: [],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'adam_wilson',
+        email: 'adam@example.com',
+        password: hashedPassword,
+        name: 'Adam Wilson',
+        bio: 'Database administrator and SQL expert',
+        avatar: '/assets/images/dp.jpg',
+        friends: [],
+        friendRequests: [],
+        createdAt: new Date()
+      },
+      {
+        username: 'olivia_taylor',
+        email: 'olivia@example.com',
+        password: hashedPassword,
+        name: 'Olivia Taylor',
+        bio: 'Mobile game developer',
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
@@ -167,6 +265,38 @@ async function initializeSampleData() {
         branches: ['main'],
         createdAt: new Date(),
         updatedAt: new Date()
+      },
+      {
+        name: 'API Gateway',
+        description: 'Microservices API gateway with authentication',
+        type: 'web',
+        hashtags: ['microservices', 'api', 'nodejs'],
+        image: '/assets/images/project1.jpg',
+        owner: 'mike_chen',
+        members: ['mike_chen'],
+        files: [
+          { name: 'server.js', path: '/', type: 'file' },
+          { name: 'routes', path: '/', type: 'folder' }
+        ],
+        branches: ['main'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Data Analytics Dashboard',
+        description: 'Real-time data visualization dashboard',
+        type: 'web',
+        hashtags: ['react', 'd3', 'analytics'],
+        image: '/assets/images/project2.jpg',
+        owner: 'sarah_wilson',
+        members: ['sarah_wilson'],
+        files: [
+          { name: 'dashboard.js', path: '/', type: 'file' },
+          { name: 'components', path: '/', type: 'folder' }
+        ],
+        branches: ['main'],
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ];
 
@@ -191,7 +321,7 @@ async function initializeSampleData() {
         comment: 'Improved mobile responsiveness across all components',
         files: ['/src/components/Header.js', '/src/components/Footer.js'],
         branch: 'main',
-        createdAt: new Date(Date.now() - 3600000) // 1 hour ago
+        createdAt: new Date(Date.now() - 3600000)
       },
       {
         projectId: insertedProjects.insertedIds[1],
@@ -200,7 +330,7 @@ async function initializeSampleData() {
         comment: 'Users can now mark tasks as complete with animation',
         files: ['/components/TaskItem.js', '/components/TaskList.js'],
         branch: 'main',
-        createdAt: new Date(Date.now() - 7200000) // 2 hours ago
+        createdAt: new Date(Date.now() - 7200000)
       }
     ];
 
@@ -210,9 +340,7 @@ async function initializeSampleData() {
 }
 
 // Authentication middleware
-// In server.js, update the authenticateToken middleware:
 const authenticateToken = async (req, res, next) => {
-  // Skip authentication for login/signup routes
   if (req.path === '/api/login' || req.path === '/api/signup') {
     return next();
   }
@@ -225,7 +353,6 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    // Check if MongoDB is connected
     if (!db) {
       return res.status(503).json({ success: false, message: 'Database not available' });
     }
@@ -248,7 +375,6 @@ const authenticateToken = async (req, res, next) => {
 // Authentication Routes
 app.post('/api/login', async (req, res) => {
   try {
-    // Check if MongoDB is connected
     if (!db) {
       return res.status(503).json({
         success: false,
@@ -322,7 +448,6 @@ app.post('/api/signup', async (req, res) => {
   try {
     const { username, email, password, name } = req.body;
 
-    // Check if user already exists
     const existingUser = await db.collection('users').findOne({
       $or: [{ username }, { email }]
     });
@@ -334,10 +459,8 @@ app.post('/api/signup', async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const newUser = {
       username,
       email,
@@ -404,9 +527,7 @@ app.put('/api/users/profile', authenticateToken, upload.single('avatar'), async 
     if (name) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
 
-    // Handle avatar upload
     if (req.file) {
-      // Convert image buffer to base64
       const base64Image = req.file.buffer.toString('base64');
       const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
       updateData.avatar = dataURI;
@@ -444,7 +565,6 @@ app.get('/api/health', async (req, res) => {
       });
     }
 
-    // Test database connection
     await db.command({ ping: 1 });
 
     res.json({
@@ -474,7 +594,7 @@ app.get('/api/test', (req, res) => {
 app.get('/api/users/:username', authenticateToken, async (req, res) => {
   try {
     const user = await db.collection('users').findOne(
-      { username: req.params.username }, // Changed from _id to username
+      { username: req.params.username },
       { projection: { password: 0, email: 0 } }
     );
 
@@ -485,6 +605,30 @@ app.get('/api/users/:username', authenticateToken, async (req, res) => {
     res.json({ success: true, user });
   } catch (error) {
     console.error('Get user error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get user's friends with details
+app.get('/api/users/:username/friends', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.collection('users').findOne(
+      { username: req.params.username },
+      { projection: { friends: 1 } }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const friends = await db.collection('users').find(
+      { username: { $in: user.friends || [] } },
+      { projection: { password: 0, email: 0, friendRequests: 0, friends: 0 } }
+    ).toArray();
+
+    res.json({ success: true, friends });
+  } catch (error) {
+    console.error('Get friends error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -500,7 +644,6 @@ app.get('/api/friends/requests', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Get details of users who sent friend requests
     const requestingUsers = await db.collection('users').find(
       { username: { $in: user.friendRequests || [] } },
       { projection: { password: 0, email: 0, friendRequests: 0, friends: 0 } }
@@ -532,12 +675,10 @@ app.post('/api/friends/request/:username', authenticateToken, async (req, res) =
       return res.status(400).json({ success: false, message: 'Cannot friend yourself' });
     }
 
-    // Check if already friends
     if (targetUser.friends.includes(req.user.username)) {
       return res.status(400).json({ success: false, message: 'Already friends' });
     }
 
-    // Check if request already sent
     if (targetUser.friendRequests.includes(req.user.username)) {
       return res.status(400).json({ success: false, message: 'Friend request already sent' });
     }
@@ -616,12 +757,10 @@ app.get('/api/projects/:id', authenticateToken, async (req, res) => {
   try {
     let project;
 
-    // First try to find by name (string)
     project = await db.collection('projects').findOne({
       name: req.params.id
     });
 
-    // If not found by name, try by ObjectId
     if (!project && ObjectId.isValid(req.params.id)) {
       project = await db.collection('projects').findOne({
         _id: new ObjectId(req.params.id)
@@ -713,7 +852,6 @@ app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
 
     await db.collection('projects').deleteOne({ _id: new ObjectId(req.params.id) });
 
-    // Also delete related check-ins
     await db.collection('checkins').deleteMany({ projectId: new ObjectId(req.params.id) });
 
     res.json({ success: true, message: 'Project deleted' });
@@ -740,7 +878,6 @@ app.post('/api/projects/:id/checkin', authenticateToken, async (req, res) => {
 
     await db.collection('checkins').insertOne(newCheckin);
 
-    // Update project's updatedAt
     await db.collection('projects').updateOne(
       { _id: new ObjectId(req.params.id) },
       { $set: { updatedAt: new Date() } }
@@ -873,8 +1010,7 @@ app.get('/api/search', authenticateToken, async (req, res) => {
       const users = await db.collection('users').find({
         $or: [
           { username: { $regex: q, $options: 'i' } },
-          { name: { $regex: q, $options: 'i' } },
-          { email: { $regex: q, $options: 'i' } }
+          { name: { $regex: q, $options: 'i' } }
         ]
       }, { projection: { password: 0 } }).toArray();
 
@@ -883,7 +1019,11 @@ app.get('/api/search', authenticateToken, async (req, res) => {
 
     if (!type || type === 'projects') {
       const projects = await db.collection('projects').find({
-        $text: { $search: q }
+        $or: [
+          { name: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { hashtags: { $in: [new RegExp(q, 'i')] } }
+        ]
       }).toArray();
 
       results.projects = projects;
@@ -891,7 +1031,12 @@ app.get('/api/search', authenticateToken, async (req, res) => {
 
     if (!type || type === 'checkins') {
       const checkins = await db.collection('checkins')
-        .find({ message: { $regex: q, $options: 'i' } })
+        .find({ 
+          $or: [
+            { message: { $regex: q, $options: 'i' } },
+            { comment: { $regex: q, $options: 'i' } }
+          ]
+        })
         .sort({ createdAt: -1 })
         .toArray();
 
@@ -909,13 +1054,11 @@ app.get('/api/search', authenticateToken, async (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-  // Use a parameterized catch-all route instead of plain '*'
   app.get('*', (req, res, next) => {
-    // Only handle routes that don't start with /api
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     } else {
-      next(); // Pass API routes to the next middleware
+      next();
     }
   });
 }
