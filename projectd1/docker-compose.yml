@@ -2,11 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
       - "5000:5000"
+      - "3000:3000"
     environment:
-      - NODE_ENV=development  # Change back to development
       - MONGODB_URI=mongodb+srv://u22857941:Sm9x38gRbDdL4hKt@imy220prac5.41pvu.mongodb.net/versioncontrol?retryWrites=true&w=majority
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-123
-    command: sh -c "npm run server & npm run dev"  # Run both commands
-    restart: unless-stopped

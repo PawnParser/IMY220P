@@ -1,52 +1,14 @@
 {
-  "name": "projectd1",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "dev": "webpack serve --mode development --open",
-    "build": "webpack --mode production",
-    "start": "node backend/server.js",
-    "server": "node backend/server.js",
-    "dev:server": "concurrently \"npm run server\" \"npm run dev\"",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "heroku-postbuild": "npm run build"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "jszip": "^3.10.1",
-    "mongodb": "^6.3.0",
-    "multer": "^2.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.8.2"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.3",
-    "@babel/preset-env": "^7.28.3",
-    "@babel/preset-react": "^7.27.1",
-    "autoprefixer": "^10.4.21",
-    "babel-loader": "^10.0.0",
-    "concurrently": "^9.2.1",
-    "css-loader": "^7.1.2",
-    "file-loader": "^6.2.0",
-    "html-webpack-plugin": "^5.6.4",
-    "postcss": "^8.5.6",
-    "postcss-loader": "^8.2.0",
-    "style-loader": "^4.0.0",
-    "tailwindcss": "^3.4.18",
-    "webpack": "^5.101.3",
-    "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2"
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up --build"
   }
 }
