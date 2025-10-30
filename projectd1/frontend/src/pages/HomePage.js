@@ -39,12 +39,24 @@ const HomePage = () => {
           project.owner === currentUser?.username
         );
         setProjects(userProjects);
+      }
 
-        // Saved projects (projects from friends)
-        const friendProjects = allProjects.filter(project => 
-          project.owner !== currentUser?.username
-        );
-        setSavedProjects(friendProjects);
+      // Load saved projects from API
+      try {
+        const savedResponse = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/users/saved-projects`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const savedData = await savedResponse.json();
+        if (savedData.success) {
+          setSavedProjects(savedData.projects || []);
+        }
+      } catch (savedError) {
+        console.log('Saved projects not available:', savedError.message);
+        setSavedProjects([]);
       }
 
       // Load friend requests
@@ -223,7 +235,7 @@ const HomePage = () => {
             ) : (
               <div className="no-data">
                 <p>No saved projects yet.</p>
-                <p>Add friends to see their projects!</p>
+                <p>Browse projects and save ones you're interested in!</p>
               </div>
             )}
           </div>

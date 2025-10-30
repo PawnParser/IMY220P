@@ -16,6 +16,7 @@ const ProjectPage = () => {
   const [activeTab, setActiveTab] = useState('files');
   const [newCheckin, setNewCheckin] = useState({ message: '', comment: '' });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -30,6 +31,9 @@ const ProjectPage = () => {
       const projectResponse = await apiService.getProject(id, token);
       if (projectResponse.success) {
         setProject(projectResponse.project);
+        
+        // Check if project is saved by current user
+        checkIfProjectIsSaved(projectResponse.project._id, token);
       } else {
         console.error('Project not found:', projectResponse.message);
         navigate('/home');
@@ -60,6 +64,76 @@ const ProjectPage = () => {
       navigate('/home');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkIfProjectIsSaved = async (projectId, token) => {
+    try {
+      // Get current user's profile to check saved projects
+      const userResponse = await apiService.getProfile(token);
+      if (userResponse.success) {
+        const user = userResponse.user;
+        // Check if project is in user's saved projects
+        // This assumes we add a 'savedProjects' field to the user model
+        const saved = user.savedProjects && user.savedProjects.includes(projectId);
+        setIsSaved(saved);
+      }
+    } catch (error) {
+      console.error('Error checking saved status:', error);
+    }
+  };
+
+  const handleSaveProject = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Create a simple API call to save the project
+      // This would need to be implemented in your backend
+      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsSaved(true);
+        alert('Project saved to your saved projects!');
+      } else {
+        alert('Failed to save project: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error saving project:', error);
+      alert('Failed to save project: ' + error.message);
+    }
+  };
+
+  const handleUnsaveProject = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000'}/api/projects/${project._id}/unsave`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsSaved(false);
+        alert('Project removed from saved projects!');
+      } else {
+        alert('Failed to unsave project: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error unsaving project:', error);
+      alert('Failed to unsave project: ' + error.message);
     }
   };
 
@@ -141,16 +215,36 @@ const ProjectPage = () => {
       <div className="project-header-section">
         <Project data={project} />
         
-        {isProjectOwner && (
-          <div className="project-actions">
+        <div className="project-actions">
+          {!isProjectOwner && (
+            <div className="save-project-actions">
+              {isSaved ? (
+                <button 
+                  onClick={handleUnsaveProject}
+                  className="unsave-project-btn"
+                >
+                  Unsave Project
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSaveProject}
+                  className="save-project-btn"
+                >
+                  Save Project
+                </button>
+              )}
+            </div>
+          )}
+          
+          {isProjectOwner && (
             <button 
               onClick={() => setShowDeleteConfirm(true)}
               className="delete-project-btn"
             >
               Delete Project
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="project-tabs">

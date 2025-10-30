@@ -102,6 +102,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['jane_smith', 'mike_chen', 'sarah_wilson'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -113,6 +114,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['john_doe', 'alex_kumar'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -124,6 +126,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['john_doe', 'lisa_rodriguez'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -135,6 +138,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['john_doe', 'david_brown'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -146,6 +150,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['jane_smith'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -157,6 +162,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['mike_chen'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -168,6 +174,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: ['sarah_wilson'],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -179,6 +186,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -190,6 +198,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -201,6 +210,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -212,6 +222,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       },
       {
@@ -223,6 +234,7 @@ async function initializeSampleData() {
         avatar: '/assets/images/dp.jpg',
         friends: [],
         friendRequests: [],
+        savedProjects: [],
         createdAt: new Date()
       }
     ];
@@ -470,6 +482,7 @@ app.post('/api/signup', async (req, res) => {
       avatar: '/assets/images/dp.jpg',
       friends: [],
       friendRequests: [],
+      savedProjects: [],
       createdAt: new Date()
     };
 
@@ -695,31 +708,6 @@ app.post('/api/friends/request/:username', authenticateToken, async (req, res) =
   }
 });
 
-// Get user's friends with details
-app.get('/api/users/:username/friends', authenticateToken, async (req, res) => {
-  try {
-    const user = await db.collection('users').findOne(
-      { username: req.params.username },
-      { projection: { friends: 1 } }
-    );
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    // Get detailed friend information
-    const friends = await db.collection('users').find(
-      { username: { $in: user.friends || [] } },
-      { projection: { password: 0, email: 0, friendRequests: 0, friends: 0 } }
-    ).toArray();
-
-    res.json({ success: true, friends });
-  } catch (error) {
-    console.error('Get friends error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
 app.post('/api/friends/accept/:username', authenticateToken, async (req, res) => {
   try {
     await db.collection('users').updateOne(
@@ -764,12 +752,7 @@ app.delete('/api/friends/:username', authenticateToken, async (req, res) => {
 // Project Routes
 app.get('/api/projects', authenticateToken, async (req, res) => {
   try {
-    const projects = await db.collection('projects').find({
-      $or: [
-        { owner: req.user.username },
-        { members: req.user.username }
-      ]
-    }).toArray();
+    const projects = await db.collection('projects').find({}).toArray();
 
     res.json({ success: true, projects });
   } catch (error) {
@@ -882,6 +865,68 @@ app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
     res.json({ success: true, message: 'Project deleted' });
   } catch (error) {
     console.error('Delete project error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Save project to user's saved projects
+app.post('/api/projects/:id/save', authenticateToken, async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    
+    // Add project to user's saved projects
+    await db.collection('users').updateOne(
+      { username: req.user.username },
+      { 
+        $addToSet: { savedProjects: new ObjectId(projectId) }
+      }
+    );
+
+    res.json({ success: true, message: 'Project saved' });
+  } catch (error) {
+    console.error('Save project error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Remove project from user's saved projects
+app.post('/api/projects/:id/unsave', authenticateToken, async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    
+    // Remove project from user's saved projects
+    await db.collection('users').updateOne(
+      { username: req.user.username },
+      { 
+        $pull: { savedProjects: new ObjectId(projectId) }
+      }
+    );
+
+    res.json({ success: true, message: 'Project unsaved' });
+  } catch (error) {
+    console.error('Unsave project error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get user's saved projects
+app.get('/api/users/saved-projects', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.collection('users').findOne(
+      { username: req.user.username },
+      { projection: { savedProjects: 1 } }
+    );
+
+    let savedProjects = [];
+    if (user.savedProjects && user.savedProjects.length > 0) {
+      savedProjects = await db.collection('projects').find({
+        _id: { $in: user.savedProjects }
+      }).toArray();
+    }
+
+    res.json({ success: true, projects: savedProjects });
+  } catch (error) {
+    console.error('Get saved projects error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
