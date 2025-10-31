@@ -5,26 +5,10 @@ The wireframes for this project are in the process of being developed.
 
 Docker Commands:
 
-# Build and start all services
-docker-compose up --build
+docker load -i my-app-image.tar
 
-# Start services in detached mode
-docker-compose up -d
+docker run -d -p 5000:5000 -e MONGODB_URI="mongodb+srv://u22857941:Sm9x38gRbDdL4hKt@imy220prac5.41pvu.mongodb.net/versioncontrol?retryWrites=true&w=majority" projectd1-app
 
-# Stop services
-docker-compose down
+TO ACCESS:
 
-# View logs
-docker-compose logs -f
-
-# Rebuild specific service
-docker-compose build app
-
-# Access MongoDB shell
-docker exec -it mongodb mongosh
-
-MongoDB Connection String for submission:
-mongodb://mongodb:27017/versioncontrol
-
-For production, use MongoDB Atlas connection string:
-mongodb+srv://username:password@cluster.mongodb.net/versioncontrol
+http://localhost:5000

@@ -3,6 +3,7 @@ services:
     build: .
     ports:
       - "5000:5000"
-      - "3000:3000"
     environment:
       - MONGODB_URI=mongodb+srv://u22857941:Sm9x38gRbDdL4hKt@imy220prac5.41pvu.mongodb.net/versioncontrol?retryWrites=true&w=majority
+      - NODE_ENV=production
+      - PORT=5000

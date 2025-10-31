@@ -1452,7 +1452,7 @@ app.get('/api/test', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-  app.get('*', (req, res, next) => {
+  app.get(/^\/.*$/, (req, res, next) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     } else {

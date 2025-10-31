@@ -2,25 +2,30 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy root package files
+# Copy package files and install ALL dependencies (including devDependencies for build)
 COPY package*.json ./
-
-# Install root dependencies
 RUN npm install
 
-# Copy all source code
-COPY . .
+# Copy webpack config
+COPY webpack.config.js ./
 
-# Build frontend
+# Copy frontend source
+COPY frontend ./frontend
+
+# Build frontend (creates frontend/dist)
 RUN npm run build
 
-# Install backend dependencies
+# Now install backend dependencies
+COPY backend/package*.json ./backend/
 WORKDIR /app/backend
-RUN npm install
+RUN npm install --production
 
-# Expose both ports
-EXPOSE 3000 5000
+# Copy backend source
+COPY backend/server.js ./
+COPY backend ./
 
-# Start both services (you'll need to modify this)
-WORKDIR /app
-CMD ["npm", "start"]
+# Expose ports
+EXPOSE 5000
+
+# Start backend
+CMD ["node", "server.js"]

@@ -1,5 +1,4 @@
 node_modules
-.dockerignore
 npm-debug.log
 .git
 .gitignore
@@ -8,3 +7,13 @@ README.md
 .env
 build
 dist
+frontend/node_modules
+frontend/dist
+frontend/build
+backend/node_modules
+backend/dist
+backend/build
+*.log
+.npm
+.eslintcache
+coverage
